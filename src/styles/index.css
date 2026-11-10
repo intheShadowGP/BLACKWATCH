@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-bg: var(--bw-bg);
+  --color-surface: var(--bw-surface);
+  --color-raised: var(--bw-raised);
+  --color-line: var(--bw-line);
+  --color-line-strong: var(--bw-line-strong);
+  --color-fg: var(--bw-fg);
+  --color-muted: var(--bw-muted);
+  --color-subtle: var(--bw-subtle);
+  --color-accent: var(--bw-accent);
+  --color-accent-fill: var(--bw-accent-fill);
+  --color-on-accent: var(--bw-on-accent);
+  --color-gold: var(--bw-gold);
+  --color-scrim: var(--bw-scrim);
+
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono:
+    ui-monospace, 'SFMono-Regular', 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', Menlo, Consolas,
+    monospace;
+}
+
+/* Design tokens. Dark is the product default; light is an opt-in preference. */
+:root {
+  color-scheme: dark;
+  --bw-bg: #0a0a0b;
+  --bw-surface: #111113;
+  --bw-raised: #18181b;
+  --bw-line: #26262b;
+  --bw-line-strong: #3a3a41;
+  --bw-fg: #ececee;
+  --bw-muted: #a6a6ae;
+  --bw-subtle: #8a8a93;
+  --bw-accent: #e5534b;
+  --bw-accent-fill: #c62f2f;
+  --bw-on-accent: #ffffff;
+  --bw-gold: #c9a24a;
+  --bw-scrim: rgb(0 0 0 / 0.7);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bw-bg: #f6f6f4;
+  --bw-surface: #ffffff;
+  --bw-raised: #efefec;
+  --bw-line: #d9d9d6;
+  --bw-line-strong: #b4b4b0;
+  --bw-fg: #151517;
+  --bw-muted: #4c4c55;
+  --bw-subtle: #63636c;
+  --bw-accent: #b3261e;
+  --bw-accent-fill: #b3261e;
+  --bw-on-accent: #ffffff;
+  --bw-gold: #7a5c12;
+  --bw-scrim: rgb(20 20 22 / 0.45);
+}
+
+/* Interface density scales every rem-based measure at once. */
+:root[data-density='compact'] {
+  font-size: 87.5%;
+}
+
+@layer base {
+  html {
+    background: var(--bw-bg);
+    color: var(--bw-fg);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--bw-gold);
+    outline-offset: 2px;
+  }
+
+  main:focus {
+    outline: none;
+  }
+
+  ::selection {
+    background: var(--bw-accent-fill);
+    color: var(--bw-on-accent);
+  }
+
+  noscript {
+    display: block;
+    padding: 2rem;
+  }
+}
+
+/* Reduced motion: explicit preference, or the system setting when left on "system". */
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-motion='system'] *,
+  :root[data-motion='system'] *::before,
+  :root[data-motion='system'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
