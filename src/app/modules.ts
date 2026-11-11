@@ -29,7 +29,7 @@ export const MODULES: readonly ModuleDefinition[] = [
     titleKey: 'nav.threatIntel',
     summaryKey: 'module.threatIntel.summary',
     scopeKey: 'module.threatIntel.scope',
-    status: 'planned',
+    status: 'available',
     milestone: 1,
   },
   {
@@ -39,7 +39,7 @@ export const MODULES: readonly ModuleDefinition[] = [
     titleKey: 'nav.vulnerabilities',
     summaryKey: 'module.vulnerabilities.summary',
     scopeKey: 'module.vulnerabilities.scope',
-    status: 'planned',
+    status: 'available',
     milestone: 1,
   },
   {
@@ -59,7 +59,7 @@ export const MODULES: readonly ModuleDefinition[] = [
     titleKey: 'nav.attack',
     summaryKey: 'module.attack.summary',
     scopeKey: 'module.attack.scope',
-    status: 'planned',
+    status: 'available',
     milestone: 1,
   },
   {

@@ -1,10 +1,15 @@
-# Verifies, builds and publishes the application to GitHub Pages.
+# Refreshes the intelligence datasets, verifies, builds and publishes the
+# application to GitHub Pages. Runs on every push to main and once a day, so
+# the published datasets stay current even without code changes.
 # Repository settings -> Pages -> Source must be set to "GitHub Actions".
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
+  schedule:
+    # 05:17 UTC daily (off the hour to avoid the scheduler's peak).
+    - cron: '17 5 * * *'
   workflow_dispatch:
 
 # Default for every job: read-only. The deploy job widens it to what Pages needs.
@@ -18,7 +23,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,6 +34,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Retrieves, validates and normalises the public datasets into public/data.
+      # A source that fails keeps the last valid copy from the deployed site
+      # (marked "stale"); a source with no valid copy is marked "missing".
+      - name: Build datasets
+        run: npm run data:build
+        env:
+          DATA_FALLBACK_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          # Optional repository secret; the pipeline respects the public rate limit without it.
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       # lint -> typecheck -> unit tests -> build -> identity check; any failure stops the deployment.
       - run: npm run verify
       - run: npm run audit:deps

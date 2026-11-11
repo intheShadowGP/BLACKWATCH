@@ -1,12 +1,12 @@
 {
   "name": "blackwatch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "BLACKWATCH — privacy-first cybersecurity workbench: threat intelligence, vulnerability management, SOC tooling and incident response training.",
   "type": "module",
   "license": "MIT",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "vite",
@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "check:identity": "node scripts/check-identity.mjs",
     "audit:deps": "npm audit --audit-level=moderate",
-    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run check:identity"
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run check:identity",
+    "data:build": "node scripts/data/build.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.7",

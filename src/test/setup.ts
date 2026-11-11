@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto';
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
+import { clearDatasetCache } from '../data/loader';
 
 // jsdom does not implement modal dialogs: minimal stand-ins that track the open state.
 if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
@@ -18,6 +19,14 @@ if (typeof HTMLDialogElement.prototype.close !== 'function') {
 
 window.scrollTo = () => undefined;
 
+// No test may reach the network: by default every dataset request answers 404
+// ("not published"). Tests that need data install fixtures with mockDatasets().
+beforeEach(() => {
+  clearDatasetCache();
+  vi.stubGlobal('fetch', vi.fn(async () => new Response('Not found', { status: 404 })));
+});
+
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });

@@ -13,6 +13,9 @@ import { PreferencesContext, type PreferencesContextValue } from './preferences-
 
 const LIGHT_QUERY = '(prefers-color-scheme: light)';
 
+/** IndexedDB can stall (blocked upgrade, slow disk): the interface never waits longer than this. */
+export const PREFERENCES_TIMEOUT_MS = 2500;
+
 function subscribeToSystemTheme(onChange: () => void): () => void {
   if (typeof window.matchMedia !== 'function') return () => undefined;
   const query = window.matchMedia(LIGHT_QUERY);
@@ -46,7 +49,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    void loadPreferences(browserDefaults()).then((loaded) => {
+    const fallback = new Promise<Awaited<ReturnType<typeof loadPreferences>>>((resolve) => {
+      window.setTimeout(() => resolve({ preferences: browserDefaults(), persistent: true }), PREFERENCES_TIMEOUT_MS);
+    });
+    void Promise.race([loadPreferences(browserDefaults()), fallback]).then((loaded) => {
       if (cancelled) return;
       latest.current = loaded.preferences;
       setState({ ...loaded, ready: true });

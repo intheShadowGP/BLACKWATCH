@@ -97,7 +97,7 @@ export function Shell() {
         {t('nav.skip')}
       </a>
 
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface lg:flex">
+      <aside className="sticky top-0 hidden h-dvh print:!hidden flex-col border-r border-line bg-surface lg:flex">
         <div className="flex h-14 items-center border-b border-line px-4">
           <Brand className="text-sm" />
         </div>
@@ -108,7 +108,7 @@ export function Shell() {
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-line bg-bg/95 px-4 backdrop-blur-sm">
+        <header className="sticky top-0 z-10 flex h-14 print:hidden items-center gap-3 border-b border-line bg-bg/95 px-4 backdrop-blur-sm">
           <button
             type="button"
             aria-label={t('nav.openMenu')}

@@ -1,71 +1,76 @@
 # Project state
 
-Last updated: 2026-11-10 · Version 0.1.0
+Last updated: 2026-11-11 · Version 0.2.0
 
 ## Summary
 
-Milestone 0 (foundation) is implemented and verified locally. No functional security module
-exists yet. Nothing has been committed, pushed or deployed.
+Milestone 0 (foundation) is complete. Milestone 1 (intelligence) is largely implemented and
+tested locally on real data: the data pipeline, the overview dashboard, the Vulnerability Center,
+the MITRE ATT&CK Explorer and the Threat Intelligence module. Nothing has been pushed or deployed;
+the repository has no remote yet.
 
 ## Milestones
 
-| Milestone | Scope | State |
-| --- | --- | --- |
-| 0 — Foundation | Shell, routing, i18n, design system, local storage, settings, tests, CI | Implemented and tested locally; first deployment pending |
-| 1 — Intelligence | Data pipeline, dashboard figures, threat intelligence, IOC explorer, vulnerabilities, ATT&CK | Not started |
-| 2 — Security Toolbox | 23 local utilities | Not started |
-| 3 — SOC Workbench | Log import, parsers, detections, timeline, reports | Not started |
-| 4 — Cyber Lab | Ten incident response scenarios | Not started |
-| 5 — Production hardening | Security and accessibility review, performance, PWA, offline | Not started |
+| Milestone | State |
+| --- | --- |
+| 0 — Foundation | Complete, tested locally; first deployment pending |
+| 1 — Intelligence | Mostly complete (see "Partially implemented"); deployment pending |
+| 2 — Security Toolbox | Not started |
+| 3 — SOC Workbench | Not started |
+| 4 — Cyber Lab | Not started |
+| 5 — Production hardening | Not started |
 
 ## Implemented and tested
 
-- Application shell: sidebar on large screens, modal drawer on small screens, skip link, focus
-  moved to the main region on navigation, document title per view, error boundary per view.
-- Routing: hash routes for the overview, seven module routes, settings and a not-found view;
-  views are lazily loaded.
-- Internationalisation: English and French, browser-language detection, runtime switch from the
-  header and from settings, `lang` attribute kept in sync.
-- Design system: dark (default) and light themes through CSS custom properties, two densities,
-  reduced-motion handling (system, forced, off), visible focus styles.
-- Local storage: Dexie database with six stores, Zod-validated preferences, degraded in-memory
-  mode with a visible warning when IndexedDB is unavailable.
-- Settings and privacy: appearance preferences, per-store record counts, JSON export, full
-  deletion behind a confirmation dialog, version information, privacy statement.
-- Overview: module status list driven by the module registry, local storage status, explicit
-  "no dataset published" state.
-- Tooling: ESLint (including bans on `eval` and raw HTML injection), strict TypeScript, Vitest,
-  Playwright, repository identity check, CI and deployment workflows.
+- **Foundation:** shell, routing, FR/EN, themes, density, reduced motion, IndexedDB storage,
+  settings, local data export and deletion, error boundary.
+- **Data pipeline** (`scripts/data`): CISA KEV, NVD (CVEs of the last 7 days and records of KEV
+  entries), MITRE ATT&CK Enterprise, CERT-FR advisories and alerts. Validation against shared Zod
+  schemas, normalisation, deduplication, provenance manifest with licence, notice, retrieval time
+  and SHA-256, last-valid-copy fallback marked "stale". Last local run: 5/5 datasets fresh.
+- **Overview:** KEV and CVE figures, severity distribution, monthly KEV additions, latest KEV
+  entries, recent critical CVEs, latest CERT-FR publications, dataset freshness table.
+- **Vulnerability Center:** recent CVEs, KEV catalog and watchlist tabs; search, severity filter,
+  sorting, pagination; CVE page with CVSS 3.x (recomputed and compared) and 4.0 (decoded), CWE,
+  products, references, KEV details, remediation references, explained P1–P5 priority; CSV export;
+  print stylesheet.
+- **MITRE ATT&CK Explorer:** matrix with platform filter, groups, software, campaigns,
+  mitigations; detail pages with relationships in both directions; dataset version shown.
+- **Threat Intelligence:** merged CERT-FR / KEV feed, IOC explorer (paste or file up to 5 MB;
+  IPv4, IPv6, domains, URLs, e-mail, MD5/SHA-1/SHA-256/SHA-512; refang/defang; address classes;
+  CSV/JSON export), threat actors, campaign timeline, investigation notes.
+- **Settings:** favorites (watchlist) management added.
 
 ## Partially implemented
 
-- **Overview dashboard (Module 1).** Structure only. CVE, KEV, advisory and freshness panels
-  depend on the Milestone 1 data pipeline.
-- **Settings (Module 8).** Favorites management and cache management are not implemented; the
-  corresponding stores exist but nothing writes to them yet.
+- Vulnerability Center: no OSV or GitHub Advisory Database data; CVEs older than 7 days are only
+  available when they are in KEV; CVSS 4.0 scores are not recomputed; PDF export relies on the
+  browser's print dialog for the current page of results.
+- Threat Intelligence: no indicator reputation feed (abuse.ch excluded, see DECISIONS.md D-015),
+  no indicator relationship graph, no geolocation (by design: no credible source integrated).
+- Settings: dataset cache controls wait for offline support.
 
 ## Not implemented
 
-Threat Intelligence, Vulnerability Center, SOC Workbench, MITRE ATT&CK Explorer, Security Toolbox,
-Cyber Lab, static data pipeline, PWA and offline support, CSV/PDF exports, Web Workers.
+SOC Workbench, Security Toolbox, Cyber Lab, PWA and offline support, Web Workers.
 
 ## Deployment
 
-- Workflows `ci.yml` and `deploy.yml` are written but have never run: the repository has no
-  remote and no commit yet.
-- GitHub Pages must be switched to the "GitHub Actions" source after the repository is created.
+- `deploy.yml` builds the datasets, verifies and publishes on push and daily. `ci.yml` runs lint,
+  types, unit and end-to-end tests on fixtures. Neither has run on GitHub yet.
+- Owner actions needed: create the public repository, push, set Pages source to GitHub Actions.
 
 ## Known limitations
 
-- Brief dark background at start-up for light-theme users (see DECISIONS.md, D-006).
-- Main JavaScript bundle is about 451 kB (142 kB gzip); vendor splitting has not been tuned.
-- End-to-end coverage is Chromium only.
-- Lighthouse performance and accessibility scores have not been measured.
-- GitHub Actions are referenced by version tag, not by commit SHA.
+- Overview downloads about 6.5 MB of JSON before compression on first visit.
+- Main JavaScript bundle is about 510 kB (158 kB gzip).
+- Brief dark background at start-up for light-theme users.
+- End-to-end coverage is Chromium only; Lighthouse not measured.
 
 ## Security considerations
 
-- The meta-delivered Content Security Policy cannot prevent framing and cannot replace HTTP
-  security headers (README, "Security limitations").
+- Meta-delivered CSP: no framing protection, no HTTP security headers (README).
+- Dataset text is third-party and validated, length-limited and rendered as text.
+- CSV exports neutralise spreadsheet formulas.
+- URLs embedding credentials are rejected by the IOC extractor so secrets are never exported.
 - IndexedDB content is unencrypted at rest.
-- Stored and URL-derived values are treated as untrusted: validated on read, rendered as text.

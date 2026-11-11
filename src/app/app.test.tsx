@@ -60,7 +60,8 @@ describe('application shell', () => {
 
   it('shows no intelligence figures while no dataset is published', async () => {
     renderApp();
-    expect(await screen.findByText(en['overview.data.empty'])).toBeInTheDocument();
+    expect((await screen.findAllByText(en['overview.data.empty'])).length).toBeGreaterThan(0);
+    expect(screen.queryByText(en['overview.kpi.kevTotal'])?.nextElementSibling?.textContent).toBe('—');
   });
 
   it('navigates to each planned module and labels it as unavailable', async () => {

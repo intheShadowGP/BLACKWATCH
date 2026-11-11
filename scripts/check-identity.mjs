@@ -17,6 +17,11 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ALLOWED_FILES = new Set(['README.md']);
+// Third-party intelligence published verbatim by the data pipeline. Their text
+// is written by the publishers (CVE descriptions, ATT&CK entries) and may name
+// any vendor or product; altering it would falsify the data. The manifest,
+// which this project writes, is still scanned. See DECISIONS.md, D-016.
+const THIRD_PARTY_PAYLOAD = /^dist\/data\/(?!manifest\.json$)[a-z0-9-]+\.json$/;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 const fromCodes = (...codes) => String.fromCharCode(...codes);
@@ -66,7 +71,7 @@ function scanText(label, text) {
 function scanFile(relativePath) {
   const normalized = relativePath.split(sep).join('/');
   scanText(`path ${normalized}`, normalized);
-  if (ALLOWED_FILES.has(normalized)) return;
+  if (ALLOWED_FILES.has(normalized) || THIRD_PARTY_PAYLOAD.test(normalized)) return;
   const full = join(ROOT, relativePath);
   if (!existsSync(full) || statSync(full).size > MAX_FILE_BYTES) return;
   scanText(`file ${normalized}`, readFileSync(full, 'latin1'));

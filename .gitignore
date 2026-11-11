@@ -27,3 +27,6 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# generated datasets (built by the data pipeline, never committed)
+public/data/

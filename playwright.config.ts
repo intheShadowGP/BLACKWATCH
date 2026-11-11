@@ -14,6 +14,10 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'retain-on-failure',
   },
+  // Cold start of several browsers at once can exceed the default 5 s on slower machines.
+  expect: {
+    timeout: 10_000,
+  },
   // End-to-end tests run against the production build, Content Security Policy included.
   webServer: {
     command: `npm run build && npm run preview -- --host 127.0.0.1 --port ${PORT} --strictPort`,

@@ -17,7 +17,7 @@ export default function PlannedModulePage({ module }: { module: ModuleDefinition
         intro={module.summaryKey ? t(module.summaryKey) : undefined}
         aside={<StatusBadge status={module.status} milestone={module.milestone} />}
       />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel title={t('planned.title')}>
           <p className="text-sm text-muted">{t('planned.body', { milestone })}</p>
         </Panel>

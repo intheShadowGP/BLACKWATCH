@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useI18n, usePreferences } from '../app/preferences-context';
 import { ConfirmDialog } from '../components/Modal';
 import { Button, PageHeader, Panel, Segmented } from '../components/ui';
 import { LANGUAGES, type MessageKey } from '../i18n';
 import { SCHEMA_VERSION, TABLE_NAMES } from '../lib/db';
+import type { FavoriteRecord } from '../lib/db';
+import { listFavorites, removeFavorite, type FavoriteKind } from '../lib/favorites';
 import { DENSITIES, MOTIONS, THEMES } from '../lib/preferences';
 import {
   countRecords,
@@ -133,6 +136,66 @@ function LocalDataPanel() {
   );
 }
 
+function FavoritesPanel() {
+  const { t } = useI18n();
+  const [favorites, setFavorites] = useState<FavoriteRecord[] | 'unavailable' | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listFavorites()
+      .then((records) => {
+        if (!cancelled) setFavorites(records);
+      })
+      .catch(() => {
+        if (!cancelled) setFavorites('unavailable');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const remove = async (favorite: FavoriteRecord) => {
+    try {
+      await removeFavorite(favorite.kind as FavoriteKind, favorite.ref);
+      setFavorites(await listFavorites());
+    } catch {
+      setFavorites('unavailable');
+    }
+  };
+
+  return (
+    <Panel title={t('settings.favorites.title')}>
+      {favorites === null ? (
+        <p className="text-sm text-muted">{t('app.loading')}</p>
+      ) : favorites === 'unavailable' ? (
+        <p className="text-sm text-gold">{t('settings.data.unavailable')}</p>
+      ) : favorites.length === 0 ? (
+        <p className="text-sm text-muted">{t('settings.favorites.empty')}</p>
+      ) : (
+        <ul className="-my-2 divide-y divide-line">
+          {favorites.map((favorite) => (
+            <li key={favorite.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <span className="min-w-0">
+                {favorite.kind === 'cve' ? (
+                  <Link to={`/vulnerabilities/${favorite.ref}`} className="font-mono text-accent hover:underline">
+                    {favorite.ref}
+                  </Link>
+                ) : (
+                  <span className="font-mono text-fg">{favorite.ref}</span>
+                )}
+                {favorite.label !== favorite.ref ? <span className="ml-2 text-muted">{favorite.label}</span> : null}
+              </span>
+              <Button variant="ghost" aria-label={t('settings.favorites.remove', { label: favorite.ref })} onClick={() => void remove(favorite)}>
+                {t('common.delete')}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
 export default function SettingsPage() {
   const { t } = useI18n();
   const { preferences, update } = usePreferences();
@@ -141,7 +204,7 @@ export default function SettingsPage() {
     <>
       <PageHeader title={t('settings.title')} intro={t('settings.intro')} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel title={t('settings.appearance.title')}>
           <div className="-my-3 divide-y divide-line">
             <Segmented
@@ -176,6 +239,8 @@ export default function SettingsPage() {
         </Panel>
 
         <LocalDataPanel />
+
+        <FavoritesPanel />
 
         <Panel title={t('settings.privacy.title')}>
           <div className="space-y-3 text-sm text-muted">

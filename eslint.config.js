@@ -30,6 +30,11 @@ export default tseslint.config(
     },
   },
   {
+    // Tests index into fixtures whose shape they define themselves.
+    files: ['**/*.test.{ts,tsx}'],
+    rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
+  },
+  {
     files: ['scripts/**/*.mjs', '*.config.{js,ts}'],
     languageOptions: { globals: globals.node },
   },

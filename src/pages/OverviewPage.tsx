@@ -1,44 +1,72 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { MODULES } from '../app/modules';
 import { useI18n, usePreferences } from '../app/preferences-context';
+import { BarChart, DatasetState, ExternalLink, FreshnessTag, SeverityBadge, Tag } from '../components/data';
 import { Icon } from '../components/Icon';
 import { PageHeader, Panel, StatusBadge } from '../components/ui';
+import { freshness } from '../data/loader';
+import { useDataset, useManifest } from '../data/useDataset';
+import type { MessageKey } from '../i18n';
+import { formatAge, formatDate, formatDateTime, formatNumber } from '../lib/format';
 import { countRecords } from '../lib/storage';
+import { bestCvss } from '../lib/vulnerabilities';
 
-type StorageState = { status: 'loading' } | { status: 'ok'; total: number } | { status: 'unavailable' };
+const DAY = 86_400_000;
+
+function Kpi({ label, value, source, to }: { label: string; value: string; source: string; to?: string }) {
+  const body = (
+    <>
+      <p className="text-xs uppercase tracking-wider text-subtle">{label}</p>
+      <p className="mt-1 font-mono text-2xl font-semibold text-fg">{value}</p>
+      <p className="mt-1 text-xs text-subtle">{source}</p>
+    </>
+  );
+  return to ? (
+    <Link to={to} className="block rounded-sm border border-line bg-surface p-4 hover:border-line-strong">
+      {body}
+    </Link>
+  ) : (
+    <div className="rounded-sm border border-line bg-surface p-4">{body}</div>
+  );
+}
+
+function PanelLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link to={to} className="mt-3 inline-flex items-center gap-2 text-sm text-accent hover:underline">
+      {children}
+      <Icon name="arrow" />
+    </Link>
+  );
+}
 
 function LocalStoragePanel() {
   const { t } = useI18n();
   const { persistent } = usePreferences();
-  const [storage, setStorage] = useState<StorageState>({ status: 'loading' });
+  const [total, setTotal] = useState<number | 'unavailable' | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     countRecords()
       .then((counts) => {
-        const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-        if (!cancelled) setStorage({ status: 'ok', total });
+        if (!cancelled) setTotal(Object.values(counts).reduce((sum, count) => sum + count, 0));
       })
       .catch(() => {
-        if (!cancelled) setStorage({ status: 'unavailable' });
+        if (!cancelled) setTotal('unavailable');
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const available = persistent && storage.status === 'ok';
   return (
     <Panel title={t('overview.storage.title')}>
-      {storage.status === 'loading' ? (
+      {total === null ? (
         <p className="text-sm text-muted">{t('app.loading')}</p>
-      ) : available ? (
+      ) : persistent && total !== 'unavailable' ? (
         <>
           <p className="text-sm text-muted">{t('overview.storage.ok')}</p>
-          <p className="mt-3 font-mono text-sm text-fg">
-            {t('overview.storage.records', { n: storage.total })}
-          </p>
+          <p className="mt-3 font-mono text-sm text-fg">{t('overview.storage.records', { n: total })}</p>
         </>
       ) : (
         <p className="text-sm text-gold">{t('overview.storage.unavailable')}</p>
@@ -48,40 +76,228 @@ function LocalStoragePanel() {
 }
 
 export default function OverviewPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const manifest = useManifest();
+  const kev = useDataset('kev');
+  const recent = useDataset('nvd-recent');
+  const certfr = useDataset('certfr');
+
+  const kevStats = useMemo(() => {
+    if (kev.status !== 'ready') return null;
+    // Windows are anchored on the retrieval time of the dataset, not on the current time.
+    const anchor = Date.parse(kev.entry.retrievedAt ?? kev.data.dateReleased);
+    const added30 = kev.data.items.filter((item) => anchor - Date.parse(item.dateAdded) <= 30 * DAY).length;
+    const months: { label: string; value: number }[] = [];
+    const end = new Date(anchor);
+    for (let offset = 11; offset >= 0; offset -= 1) {
+      const month = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - offset, 1)).toISOString().slice(0, 7);
+      months.push({ label: month, value: kev.data.items.filter((item) => item.dateAdded.startsWith(month)).length });
+    }
+    return { total: kev.data.items.length, added30, months, ransomware: kev.data.items.filter((item) => item.ransomware === 'Known').length };
+  }, [kev]);
+
+  const recentStats = useMemo(() => {
+    if (recent.status !== 'ready') return null;
+    const kevIds = new Set(kev.status === 'ready' ? kev.data.items.map((item) => item.cve) : []);
+    const buckets = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, NONE: 0, UNSCORED: 0 };
+    const scored = recent.data.items.map((item) => ({ item, cvss: bestCvss(item) }));
+    for (const { cvss } of scored) {
+      if (!cvss) buckets.UNSCORED += 1;
+      else buckets[cvss.severity] += 1;
+    }
+    const critical = scored
+      .filter((entry) => entry.cvss && entry.cvss.score >= 9)
+      .sort((a, b) => (b.cvss?.score ?? 0) - (a.cvss?.score ?? 0) || b.item.published.localeCompare(a.item.published))
+      .slice(0, 6);
+    return { total: scored.length, buckets, critical, inKev: scored.filter((entry) => kevIds.has(entry.item.id)).length };
+  }, [recent, kev]);
+
+  const attackEntry = manifest.status === 'ready' ? manifest.manifest.datasets.find((entry) => entry.id === 'attack') : undefined;
   const modules = MODULES.filter((module) => module.id !== 'overview');
+  const dash = '—';
 
   return (
     <>
       <PageHeader title={t('overview.title')} intro={t('overview.intro')} />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title={t('overview.modules.title')} className="lg:col-span-2">
-          <ul className="-my-2 divide-y divide-line">
-            {modules.map((module) => (
-              <li key={module.id}>
-                <Link
-                  to={`/${module.path}`}
-                  className="group flex items-center gap-3 py-2.5 text-sm hover:text-fg"
-                >
-                  <Icon name={module.icon} className="shrink-0 text-subtle group-hover:text-fg" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-fg">{t(module.titleKey)}</span>
-                    {module.summaryKey ? (
-                      <span className="block truncate text-muted">{t(module.summaryKey)}</span>
-                    ) : null}
-                  </span>
-                  <StatusBadge status={module.status} milestone={module.milestone} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 border-t border-line pt-3 text-xs text-subtle">{t('overview.modules.note')}</p>
+      {manifest.status === 'missing' ? (
+        <div className="mb-4 rounded-sm border border-line-strong bg-surface p-4 text-sm text-gold">{t('overview.data.empty')}</div>
+      ) : manifest.status === 'error' ? (
+        <div className="mb-4">
+          <DatasetState state={manifest} />
+        </div>
+      ) : null}
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Kpi label={t('overview.kpi.kevTotal')} value={kevStats ? formatNumber(kevStats.total, language) : dash} source="CISA KEV" to="/vulnerabilities?tab=kev" />
+        <Kpi label={t('overview.kpi.kevRecent')} value={kevStats ? formatNumber(kevStats.added30, language) : dash} source="CISA KEV" to="/vulnerabilities?tab=kev" />
+        <Kpi label={t('overview.kpi.cveRecent')} value={recentStats ? formatNumber(recentStats.total, language) : dash} source="NVD" to="/vulnerabilities" />
+        <Kpi label={t('overview.kpi.cveCritical')} value={recentStats ? formatNumber(recentStats.buckets.CRITICAL, language) : dash} source="NVD" to="/vulnerabilities" />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Panel title={t('overview.chart.severity')}>
+          {recentStats ? (
+            <>
+              <BarChart
+                caption={t('overview.chart.severity')}
+                data={[
+                  { label: t('severity.CRITICAL'), value: recentStats.buckets.CRITICAL, tone: 'accent' },
+                  { label: t('severity.HIGH'), value: recentStats.buckets.HIGH, tone: 'accent' },
+                  { label: t('severity.MEDIUM'), value: recentStats.buckets.MEDIUM, tone: 'gold' },
+                  { label: t('severity.LOW'), value: recentStats.buckets.LOW },
+                  { label: t('severity.NONE'), value: recentStats.buckets.NONE },
+                  { label: t('severity.UNSCORED'), value: recentStats.buckets.UNSCORED },
+                ]}
+              />
+              <p className="mt-3 text-xs text-subtle">{t('overview.chart.severityNote', { kev: recentStats.inKev })}</p>
+            </>
+          ) : (
+            <DatasetState state={recent} />
+          )}
+        </Panel>
+        <Panel title={t('overview.chart.kevMonthly')}>
+          {kevStats ? (
+            <>
+              <BarChart caption={t('overview.chart.kevMonthly')} data={kevStats.months.map((month) => ({ ...month, tone: 'gold' as const }))} />
+              <p className="mt-3 text-xs text-subtle">{t('overview.chart.kevNote', { n: formatNumber(kevStats.ransomware, language) })}</p>
+            </>
+          ) : (
+            <DatasetState state={kev} />
+          )}
+        </Panel>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Panel title={t('overview.list.kev')}>
+          {kev.status === 'ready' ? (
+            <>
+              <ul className="-my-2 divide-y divide-line">
+                {kev.data.items.slice(0, 6).map((item) => (
+                  <li key={item.cve} className="py-2 text-sm">
+                    <Link to={`/vulnerabilities/${item.cve}`} className="font-mono text-accent hover:underline">{item.cve}</Link>
+                    <span className="ml-2 text-xs text-subtle">{formatDate(item.dateAdded, language)}</span>
+                    <span className="mt-0.5 line-clamp-2 text-muted">{item.name}</span>
+                  </li>
+                ))}
+              </ul>
+              <PanelLink to="/vulnerabilities?tab=kev">{t('overview.list.all')}</PanelLink>
+            </>
+          ) : (
+            <DatasetState state={kev} />
+          )}
+        </Panel>
+
+        <Panel title={t('overview.list.critical')}>
+          {recentStats ? (
+            recentStats.critical.length > 0 ? (
+              <>
+                <ul className="-my-2 divide-y divide-line">
+                  {recentStats.critical.map(({ item, cvss }) => (
+                    <li key={item.id} className="py-2 text-sm">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <Link to={`/vulnerabilities/${item.id}`} className="font-mono text-accent hover:underline">{item.id}</Link>
+                        <SeverityBadge severity={cvss?.severity ?? null} score={cvss?.score} />
+                      </span>
+                      <span className="mt-0.5 line-clamp-2 text-muted">{item.description}</span>
+                    </li>
+                  ))}
+                </ul>
+                <PanelLink to="/vulnerabilities">{t('overview.list.all')}</PanelLink>
+              </>
+            ) : (
+              <p className="text-sm text-muted">{t('overview.list.noCritical')}</p>
+            )
+          ) : (
+            <DatasetState state={recent} />
+          )}
+        </Panel>
+
+        <Panel title={t('overview.list.advisories')}>
+          {certfr.status === 'ready' ? (
+            <>
+              <ul className="-my-2 divide-y divide-line">
+                {certfr.data.items.slice(0, 6).map((item) => (
+                  <li key={item.id} className="py-2 text-sm">
+                    <span className="font-mono text-xs text-subtle">{item.id} · {formatDate(item.published, language)}</span>
+                    <span className="mt-0.5 block" lang="fr">
+                      <ExternalLink href={item.url}>{item.title}</ExternalLink>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <PanelLink to="/threat-intel">{t('overview.list.all')}</PanelLink>
+            </>
+          ) : (
+            <DatasetState state={certfr} />
+          )}
+        </Panel>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Panel title={t('overview.data.title')} className="lg:col-span-2">
+          {manifest.status === 'ready' ? (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-line text-xs uppercase tracking-wider text-subtle">
+                      <th scope="col" className="py-1.5 pr-3 font-medium">{t('overview.data.dataset')}</th>
+                      <th scope="col" className="py-1.5 pr-3 font-medium">{t('overview.data.status')}</th>
+                      <th scope="col" className="py-1.5 pr-3 font-medium">{t('overview.data.retrieved')}</th>
+                      <th scope="col" className="py-1.5 text-right font-medium">{t('settings.data.count')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {manifest.manifest.datasets.map((entry) => (
+                      <tr key={entry.id}>
+                        <th scope="row" className="py-1.5 pr-3 font-normal text-fg">
+                          {t(`dataset.${entry.id}` as MessageKey)}
+                          <span className="block text-xs text-subtle">{entry.publisher}</span>
+                        </th>
+                        <td className="py-1.5 pr-3"><FreshnessTag entry={entry} /></td>
+                        <td className="whitespace-nowrap py-1.5 pr-3 text-muted">
+                          {entry.retrievedAt ? (
+                            <>
+                              {formatAge(freshness(entry).ageHours, language)}
+                              <span className="block text-xs text-subtle">{formatDateTime(entry.retrievedAt, language)}</span>
+                            </>
+                          ) : dash}
+                        </td>
+                        <td className="py-1.5 text-right font-mono text-muted">{formatNumber(entry.count, language)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-3 text-xs text-subtle">{t('overview.data.note')}</p>
+              {attackEntry?.version ? (
+                <p className="mt-2 text-xs text-subtle">
+                  <Tag tone="gold">{t('attack.versionShort', { version: attackEntry.version })}</Tag>
+                </p>
+              ) : null}
+            </>
+          ) : manifest.status === 'missing' ? (
+            <p className="text-sm text-muted">{t('overview.data.empty')}</p>
+          ) : (
+            <DatasetState state={manifest} />
+          )}
         </Panel>
 
         <div className="flex flex-col gap-4">
-          <Panel title={t('overview.data.title')}>
-            <p className="text-sm text-muted">{t('overview.data.empty')}</p>
+          <Panel title={t('overview.modules.title')}>
+            <ul className="-my-2 divide-y divide-line">
+              {modules.map((module) => (
+                <li key={module.id}>
+                  <Link to={`/${module.path}`} className="group flex items-center gap-3 py-2 text-sm">
+                    <Icon name={module.icon} className="shrink-0 text-subtle group-hover:text-fg" />
+                    <span className="min-w-0 flex-1 text-fg group-hover:underline">{t(module.titleKey)}</span>
+                    <StatusBadge status={module.status} milestone={module.milestone} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 border-t border-line pt-3 text-xs text-subtle">{t('overview.modules.note')}</p>
           </Panel>
           <LocalStoragePanel />
           <Panel title={t('overview.privacy.title')}>

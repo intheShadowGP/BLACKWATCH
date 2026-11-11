@@ -1,4 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
+import { DATA_FILES } from '../src/test/fixtures';
+
+/** Serves the synthetic fixture datasets: tests never depend on live intelligence. */
+async function serveFixtures(page: Page) {
+  await page.route('**/data/*.json', async (route) => {
+    const name = new URL(route.request().url()).pathname.split('/').pop() ?? '';
+    const body = DATA_FILES[name];
+    await (body === undefined ? route.fulfill({ status: 404, body: 'Not found' }) : route.fulfill({ json: body }));
+  });
+}
 
 /** Collects console errors and failed or third-party requests for the lifetime of a page. */
 function watch(page: Page) {
@@ -22,6 +32,10 @@ async function openNavigation(page: Page, isMobile: boolean) {
 }
 
 test.use({ locale: 'en-US' });
+
+test.beforeEach(async ({ page }) => {
+  await serveFixtures(page);
+});
 
 test('loads without console errors or third-party requests', async ({ page }) => {
   const observed = watch(page);
@@ -77,13 +91,36 @@ test('exports local data as a JSON file', async ({ page }) => {
   expect(download.suggestedFilename()).toMatch(/^blackwatch-export-[\w-]+\.json$/);
 });
 
-test('has no horizontal overflow', async ({ page }) => {
-  await page.goto('/#/settings');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  );
-  expect(overflow).toBeLessThanOrEqual(0);
+for (const path of ['/', '/settings', '/vulnerabilities', '/vulnerabilities/CVE-2025-20001', '/attack', '/attack/G9001', '/threat-intel', '/threat-intel?tab=ioc']) {
+  test(`has no horizontal page overflow on ${path}`, async ({ page }) => {
+    await page.goto(`/#${path}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+}
+
+test('shows dataset figures with provenance', async ({ page }) => {
+  const observed = watch(page);
+  await page.goto('/');
+  await expect(page.getByText('Known exploited vulnerabilities').locator('xpath=following-sibling::p[1]')).toHaveText('2');
+  await expect(page.getByText('Publisher of kev')).toBeVisible();
+  await page.goto('/#/vulnerabilities/CVE-2025-20001');
+  await expect(page.getByText('In CISA KEV')).toBeVisible();
+  await page.goto('/#/attack');
+  await expect(page.getByText(/ATT&CK v99\.0/)).toBeVisible();
+  expect(observed.consoleErrors).toEqual([]);
+  expect(observed.foreignRequests).toEqual([]);
+});
+
+test('states that no dataset is published when the data files are absent', async ({ page }) => {
+  await page.unroute('**/data/*.json');
+  await page.route('**/data/*.json', (route) => route.fulfill({ status: 404, body: 'Not found' }));
+  await page.goto('/');
+  await expect(page.getByText(/No intelligence dataset is published/).first()).toBeVisible();
+  await page.goto('/#/vulnerabilities');
+  await expect(page.getByText(/This dataset is not published/).first()).toBeVisible();
 });
 
 test('unknown routes render as text', async ({ page }) => {
