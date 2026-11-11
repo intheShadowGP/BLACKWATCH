@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-11-11 · Version 0.2.0
+Last updated: 2026-11-11 · Version 0.3.0
 
 ## Summary
 
@@ -15,7 +15,7 @@ the repository has no remote yet.
 | --- | --- |
 | 0 — Foundation | Complete, tested locally; first deployment pending |
 | 1 — Intelligence | Mostly complete (see "Partially implemented"); deployment pending |
-| 2 — Security Toolbox | Not started |
+| 2 — Security Toolbox | Complete, tested locally |
 | 3 — SOC Workbench | Not started |
 | 4 — Cyber Lab | Not started |
 | 5 — Production hardening | Not started |
@@ -41,6 +41,12 @@ the repository has no remote yet.
   CSV/JSON export), threat actors, campaign timeline, investigation notes.
 - **Settings:** favorites (watchlist) management added.
 
+- **Security Toolbox:** 20 tools covering the 23 required utilities (registry test enforces the
+  mapping); regex tester in a worker with a 2 s kill switch; file hashing and inspection in a
+  worker (MD5, SHA-1, SHA-256, SHA-384, SHA-512, entropy profile, magic-byte detection, hex view);
+  IPv4/IPv6/CIDR calculators; IANA port registry search; HTTP header analyzer; password pattern
+  checks; TLS reference from RFC 9325; Sigma and YARA structural viewers; shared IOC explorer.
+
 ## Partially implemented
 
 - Vulnerability Center: no OSV or GitHub Advisory Database data; CVEs older than 7 days are only
@@ -52,7 +58,7 @@ the repository has no remote yet.
 
 ## Not implemented
 
-SOC Workbench, Security Toolbox, Cyber Lab, PWA and offline support, Web Workers.
+SOC Workbench, Cyber Lab, PWA and offline support.
 
 ## Deployment
 

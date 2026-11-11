@@ -13,6 +13,8 @@ const CveDetailPage = lazy(() => import('../pages/CveDetailPage'));
 const AttackPage = lazy(() => import('../pages/AttackPage'));
 const AttackDetailPage = lazy(() => import('../pages/AttackDetailPage'));
 const ThreatIntelPage = lazy(() => import('../pages/ThreatIntelPage'));
+const ToolboxIndexPage = lazy(async () => ({ default: (await import('../pages/ToolboxPage')).ToolboxIndexPage }));
+const ToolPage = lazy(async () => ({ default: (await import('../pages/ToolboxPage')).ToolPage }));
 
 export function AppRoutes() {
   return (
@@ -27,6 +29,8 @@ export function AppRoutes() {
         <Route path="vulnerabilities/:cveId" element={<CveDetailPage />} />
         <Route path="attack" element={<AttackPage />} />
         <Route path="attack/:attackId" element={<AttackDetailPage />} />
+        <Route path="toolbox" element={<ToolboxIndexPage />} />
+        <Route path="toolbox/:toolId" element={<ToolPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

@@ -1,6 +1,8 @@
 import type { MessageKey } from './en';
+import { toolboxFr } from './toolbox.fr';
 
 export const fr: Record<MessageKey, string> = {
+  ...toolboxFr,
   'app.tagline': 'Confidentialité d’abord. Guidé par le renseignement. Conçu pour les professionnels.',
   'app.loading': 'Chargement…',
 

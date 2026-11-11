@@ -7,9 +7,9 @@ vulnerability management, SOC investigation tooling, MITRE ATT&CK exploration, s
 and incident response training. It is a static application — no account, no backend, no tracking.
 Files and text you provide are processed locally and never leave your device.
 
-> **Status: 0.2.0 — Milestone 1 (intelligence) in progress.** The foundation and the first three
-> intelligence modules work on real, traceable public data. The SOC Workbench, Security Toolbox and
-> Cyber Lab are **not implemented yet**; the application says so on their pages and shows no
+> **Status: 0.3.0 — Milestones 1 (intelligence) and 2 (Security Toolbox).** The foundation, the
+> intelligence modules and the Security Toolbox work; intelligence modules use real, traceable
+> public data. The SOC Workbench and Cyber Lab are **not implemented yet**; the application says so on their pages and shows no
 > placeholder data. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact status.
 
 ## Features
@@ -25,7 +25,7 @@ Files and text you provide are processed locally and never leave your device.
 | MITRE ATT&CK Explorer: Enterprise matrix, techniques, sub-techniques, groups, software, campaigns, mitigations, detection strategies, relationships | Implemented, tested |
 | Threat Intelligence: CERT-FR and KEV feed, IOC explorer (extraction, validation, classification, export), threat actors, campaign timeline, notes | Partial: no indicator reputation feeds, no indicator relationship graph |
 | SOC Workbench | Planned (Milestone 3) |
-| Security Toolbox | Planned (Milestone 2) |
+| Security Toolbox: 20 local tools (hashing incl. MD5 and files, Base64, hex, entropy, JWT, JSON, URL, IOC, regex with timeout, IPv4/IPv6/CIDR, IANA ports, HTTP headers, password patterns, TLS reference, Sigma and YARA viewers, file inspector) | Implemented, tested |
 | Cyber Lab | Planned (Milestone 4) |
 | PWA / offline mode | Planned (Milestone 5) |
 
@@ -51,10 +51,12 @@ src/
   data/        dataset schemas, loader, React hooks
   i18n/        English and French dictionaries
   lib/         CVSS, IOC, ATT&CK, prioritisation, export, storage
+  toolbox/     tool registry, pure tool libraries, workers, tool views
   pages/       one lazily loaded view per route
 scripts/data/  data pipeline (retrieval, normalisation)
 e2e/           Playwright end-to-end tests (production build, fixture data)
 public/licenses/ third-party licence texts shipped with the site
+public/reference/ IANA port registry extract (generated, committed)
 ```
 
 Design decisions are recorded in [DECISIONS.md](DECISIONS.md).
@@ -87,6 +89,7 @@ Without it the application runs and states that no dataset is published.
 | --- | --- |
 | `npm run dev` | Development server with hot reload |
 | `npm run data:build` | Retrieve and validate the datasets into `public/data/` |
+| `npm run reference:ports` | Regenerate the IANA port reference |
 | `npm run build` | Production build in `dist/` |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | ESLint |
@@ -111,8 +114,8 @@ pull requests and never contacts the data sources.
 - The browser only requests files hosted with the application. Links to external references
   (NVD, vendor advisories, attack.mitre.org) open only when you click them, in a new tab, without
   a referrer.
-- Text pasted into the IOC explorer and imported files are processed in the browser and never
-  uploaded.
+- Text pasted into the IOC explorer and the toolbox, passwords, tokens and imported files are
+  processed in the browser and never uploaded, stored or put in the URL.
 - Preferences, the watchlist and notes are stored in IndexedDB in your browser profile.
   **Settings & Privacy** lets you export everything as JSON or erase it.
 - GitHub Pages, as the host, can observe standard connection metadata (such as IP address and
@@ -142,6 +145,8 @@ integration. Every page that shows data lists its sources, licence, retrieval ti
 | [CISA KEV](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) | Known exploited vulnerabilities | [CC0 1.0](https://www.cisa.gov/sites/default/files/licenses/kev/license.txt) | No endorsement by CISA or DHS is implied. |
 | [NVD CVE API 2.0](https://nvd.nist.gov/developers/vulnerabilities) | CVE records of the last 7 days, and records of KEV entries | [NVD API Terms of Use](https://nvd.nist.gov/developers/terms-of-use) | This product uses the NVD API but is not endorsed or certified by the NVD. A subset of fields is shown, unaltered. Public rate limit respected (5 requests / 30 s). Rejected CVE ids are excluded. |
 | [MITRE ATT&CK STIX data](https://github.com/mitre-attack/attack-stix-data) | Enterprise ATT&CK, latest version | [ATT&CK Terms of Use](https://attack.mitre.org/resources/legal-and-branding/terms-of-use/) | © 2026 The MITRE Corporation. This work is reproduced and distributed with the permission of The MITRE Corporation. Full licence in [`public/licenses/mitre-attack.txt`](public/licenses/mitre-attack.txt). Long descriptions are shortened. |
+| [IANA port registry](https://www.iana.org/assignments/service-names-port-numbers/) | TCP/UDP service names and ports (toolbox) | [CC0 1.0](https://www.iana.org/help/licensing-terms) | Snapshot committed with its retrieval date. |
+| [IANA TLD list](https://data.iana.org/TLD/tlds-alpha-by-domain.txt) | Top-level domains (IOC validation) | [CC0 1.0](https://www.iana.org/help/licensing-terms) | Snapshot embedded with its version line. |
 | [CERT-FR](https://www.cert.cyber.gouv.fr/) | Advisory and alert titles and summaries (RSS) | [Licence Ouverte 2.0 (Etalab)](https://www.etalab.gouv.fr/licence-ouverte-open-licence/) | Source: CERT-FR (ANSSI). |
 
 **Evaluated and not integrated:** abuse.ch feeds (URLhaus, ThreatFox, MalwareBazaar) — their terms
@@ -168,7 +173,9 @@ Issues and pull requests are welcome. Before opening a pull request:
 
 ## Known limitations
 
-- SOC Workbench, Security Toolbox and Cyber Lab are not implemented (see the table above).
+- SOC Workbench and Cyber Lab are not implemented (see the table above).
+- Toolbox: CVSS-style or password "scores" are not produced on purpose; Sigma and YARA rules are
+  displayed, never executed; regular expressions use JavaScript syntax only.
 - The Vulnerability Center only covers CVEs published in the 7 days before the last dataset
   refresh, plus every KEV entry. Other CVEs link to the NVD.
 - CVSS 4.0 vectors are decoded but scores are not recomputed locally; CVSS 3.x base scores are

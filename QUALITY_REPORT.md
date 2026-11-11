@@ -1,6 +1,6 @@
 # Quality report
 
-Last run: 2026-11-11 · Version 0.2.0 (after review fixes) · Windows 11, Node.js 26.13, npm 11.20
+Last run: 2026-11-11 · Version 0.3.0 · Windows 11, Node.js 26.13, npm 11.20
 
 Only checks that were actually executed are reported as passed. All runs below were local.
 
@@ -10,15 +10,36 @@ Only checks that were actually executed are reported as passed. All runs below w
 | --- | --- | --- |
 | Lint | `npm run lint` | Passed, 0 findings |
 | Type check | `npm run typecheck` | Passed (strict, `noUncheckedIndexedAccess`) |
-| Unit, integration and pipeline tests | `npm test` | Passed, 280 tests in 11 files |
+| Unit, integration and pipeline tests | `npm test` | Passed, 420 tests in 15 files |
 | Data pipeline against live sources | `npm run data:build` | 5/5 datasets fresh (KEV 1,779; NVD recent 4,694; NVD KEV 1,779; ATT&CK v20.1, 706 techniques; CERT-FR 80) |
-| Production build | `npm run build` | Passed (main bundle 510 kB, 158 kB gzip) |
-| Repository identity check | `npm run check:identity` | Passed, 77 files plus build output |
+| Production build | `npm run build` | Passed (main bundle 551 kB, 174 kB gzip; the increase is the toolbox translations, which load with the shell) |
+| Repository identity check | `npm run check:identity` | Passed, 110 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
-| End-to-end tests | `npm run test:e2e` | Passed, 32 tests (16 scenarios × desktop and mobile Chromium), fixture data |
+| End-to-end tests | `npm run test:e2e` | 44 tests (22 scenarios × desktop and mobile Chromium), fixture data: 4 of 5 consecutive full runs passed 44/44, one had 1 failure (see Observations) |
 
 Manual review in a browser with the live datasets: overview, Vulnerability Center, CVE detail and
-ATT&CK matrix in French; no console errors.
+ATT&CK matrix in French; no console errors. Regex tester in the browser: the pattern `^(a+)+# Quality report
+
+Last run: 2026-11-11 · Version 0.3.0 · Windows 11, Node.js 26.13, npm 11.20
+
+Only checks that were actually executed are reported as passed. All runs below were local.
+
+## Results
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Lint | `npm run lint` | Passed, 0 findings |
+| Type check | `npm run typecheck` | Passed (strict, `noUncheckedIndexedAccess`) |
+| Unit, integration and pipeline tests | `npm test` | Passed, 420 tests in 15 files |
+| Data pipeline against live sources | `npm run data:build` | 5/5 datasets fresh (KEV 1,779; NVD recent 4,694; NVD KEV 1,779; ATT&CK v20.1, 706 techniques; CERT-FR 80) |
+| Production build | `npm run build` | Passed (main bundle 551 kB, 174 kB gzip; the increase is the toolbox translations, which load with the shell) |
+| Repository identity check | `npm run check:identity` | Passed, 110 files plus build output |
+| Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
+| End-to-end tests | `npm run test:e2e` | 44 tests (22 scenarios × desktop and mobile Chromium), fixture data: 4 of 5 consecutive full runs passed 44/44, one had 1 failure (see Observations) |
+
+Manual review in a browser with the live datasets: overview, Vulnerability Center, CVE detail and
+
+on 40 "a" followed by "!" was stopped after 2 seconds and reported, with the page still usable.
 
 ## Cross-check against real data
 
@@ -34,6 +55,21 @@ ATT&CK matrix in French; no console errors.
   boundaries, then covered by tests.
 
 ## What the tests cover
+
+- **Security Toolbox (140 tests):** hashes against `node:crypto` on empty and random inputs around
+  block boundaries, MD5 against the RFC 1321 vectors and in uneven chunks; Base64 and hex
+  round-trips against Node, invalid input, non-UTF-8 output shown as hex; entropy bounds; strict
+  JSON parser error positions, duplicate keys, unsafe integers, prototype keys, 100,000-level
+  nesting; JWT decoding with alg none, expiry and JWE; IPv4 and CIDR including /0, /31, /32 and
+  255.255.255.255; IPv6 compression with the RFC 5952 examples; URL findings; header analysis;
+  password patterns (eight well-known weak passwords never rated above weak); YARA tokenisation
+  with braces and comment markers inside strings; Sigma parsing, duplicate keys and alias
+  expansion; file signature detection; registry coverage of the 23 specified utilities; every tool
+  page renders with its limits; inputs stay out of the URL and browser storage.
+- **Toolbox end-to-end (production build):** catastrophic regex stopped and the page still usable;
+  file hashing in a worker under the CSP, checked against Node digests; magic-byte detection and
+  extension mismatch; IANA port search; Sigma with the lazily loaded YAML parser; all 20 tools open
+  without console errors or horizontal overflow on desktop and mobile.
 
 - **Pipeline fallback (6 tests):** last valid copy accepted; checksum mismatch, schema-invalid
   copy, "missing" entry, invalid manifest and absent copy rejected; fall-through between sources.
@@ -83,11 +119,20 @@ ATT&CK matrix in French; no console errors.
 
 ## Observations
 
-- **Intermittent end-to-end failure, local only.** In roughly one full run out of five or six, the
-  first 3–4 desktop tests time out: the shell is rendered but the main region stays on the
-  lazy-route fallback ("Loading…"). The Playwright trace shows the requests for the route chunks
-  to the local `vite preview` server never received a response (status -1), while the HTML, CSS
-  and main bundle were served in under 35 ms. The application code is therefore not implicated;
-  the local preview server stalls under concurrent requests on this machine. Warming the assets
-  before the tests did not help. Not resolved; CI retries a failed test once and reports it as
-  flaky.
+- **End-to-end workers.** With one worker the toolbox suite ran three times without the stall;
+  with four workers the first batch of desktop tests stalled in one run. The suite now runs with
+  two workers locally and in CI (DECISIONS.md D-026).
+
+- **Intermittent end-to-end failure, local only.** In roughly one full run out of five to ten,
+  2–4 of the first tests time out: the shell is rendered but the main region stays on the
+  lazy-route fallback ("Loading…"). Findings so far:
+  - The Playwright trace shows the requests for the route chunks pending without a response,
+    while the HTML, CSS and main bundle loaded in under 35 ms.
+  - The failure reproduces with `vite preview` and with a minimal Node static server.
+  - With a request-logging server, every request the server received was answered within 10 ms
+    (241 received, 241 answered) during a failing run.
+  - Warming the built files before the tests did not help.
+
+  The stall therefore lies between the browser and the loopback server on this machine; neither
+  the server nor a defect in the route code has been shown to cause it. Not resolved; CI retries
+  a failed test once and reports it as flaky.

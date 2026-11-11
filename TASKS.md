@@ -38,8 +38,10 @@
 
 ## Milestone 2 — Security Toolbox
 
-- [ ] The 23 utilities listed in the product specification, each with stated limitations
-- [ ] Web Worker for file hashing and other heavy processing
+- [x] The 23 utilities listed in the product specification, each with stated limitations
+- [x] Web Workers for file analysis and the regular expression tester
+- [ ] Optional: maintained password estimator (zxcvbn) loaded on demand
+- [ ] Optional: CVSS 4.0 score computation
 
 ## Milestone 3 — SOC Workbench
 

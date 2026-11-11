@@ -1,6 +1,6 @@
 {
   "name": "blackwatch",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "BLACKWATCH — privacy-first cybersecurity workbench: threat intelligence, vulnerability management, SOC tooling and incident response training.",
   "type": "module",
@@ -20,13 +20,15 @@
     "check:identity": "node scripts/check-identity.mjs",
     "audit:deps": "npm audit --audit-level=moderate",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run check:identity",
-    "data:build": "node scripts/data/build.mjs"
+    "data:build": "node scripts/data/build.mjs",
+    "reference:ports": "node scripts/reference/build-ports.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.7",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5",
+    "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {

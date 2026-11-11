@@ -1,4 +1,7 @@
+import { toolboxEn } from './toolbox.en';
+
 export const en = {
+  ...toolboxEn,
   'app.tagline': 'Privacy first. Intelligence driven. Built for professionals.',
   'app.loading': 'Loading…',
 

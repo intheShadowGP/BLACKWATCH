@@ -128,3 +128,52 @@ an option if interactive time series are needed.
 
 Rendering waits for stored preferences to avoid a language flash, but never longer than 2.5 s: a
 stalled IndexedDB (blocked upgrade, slow disk) must not leave the page blank.
+
+## D-020 — Security Toolbox as a registry of thin views over pure functions
+
+Each tool is an entry in `src/toolbox/registry.ts` (id, category, translated title, summary and
+limits text, lazily loaded component). Logic lives in `src/toolbox/lib` as pure, tested functions;
+views only render. `SPECIFICATION_COVERAGE` maps the 23 required utilities to the 20 tools that
+provide them (the three SHA-2 sizes share one tool, as do JSON formatting and validation) and a
+test fails if a requirement loses its tool. Tool inputs stay in component state: never in the URL,
+IndexedDB or browser storage.
+
+## D-021 — Workers for regular expressions and file analysis
+
+Regular expressions run in a module worker created per test and terminated after 2 s: only a
+separate thread can be stopped while a pattern backtracks catastrophically. File hashing, entropy
+and signature detection also run in a worker. Both load under the production CSP
+(`worker-src 'self'`), which the end-to-end tests check on the built site. When workers are
+unavailable, the regex tester refuses to run rather than risk freezing the page.
+
+## D-022 — MD5 implemented locally
+
+Web Crypto has no MD5, yet MD5 is the most common hash in indicator feeds. A small RFC 1321
+implementation is tested against the RFC vectors and against `node:crypto` on random inputs. It is
+offered for matching indicators only.
+
+## D-023 — Password estimator reports findings, not a score
+
+Character-class scoring rates `Password1!` as strong. The tool instead reports named guessable
+patterns (common passwords with affixes or substitutions, sequences, repetition, dates, length)
+and an explicitly labelled upper bound on entropy. The verdict is either "weak" or "no known
+weakness", never "strong". A maintained estimator such as zxcvbn remains an option.
+
+## D-024 — Authored reference data is cited and checked
+
+The TLS reference follows RFC 9325 (BCP 195) and the RFCs it cites; the file signature table
+cites the defining specification of each format; every cited URL was checked to resolve when
+written. The port reference is generated from the IANA registry (CC0 1.0) by
+`npm run reference:ports` and committed with its retrieval date.
+
+## D-025 — YAML parser dependency for the Sigma viewer
+
+`yaml` (ISC, no dependencies, already present through Vite) parses Sigma rules. It is loaded only
+in the Sigma viewer's chunk, with unique keys enforced and alias expansion capped at 100.
+
+## D-026 — Two end-to-end workers
+
+On the development machine, several freshly started browsers loading the site at once
+occasionally never receive responses for route chunks (see QUALITY_REPORT.md). With one worker
+the stall did not occur; with two it occurred in one run out of five. Both local runs and CI use
+two workers.
