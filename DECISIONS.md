@@ -162,8 +162,10 @@ weakness", never "strong". A maintained estimator such as zxcvbn remains an opti
 ## D-024 — Authored reference data is cited and checked
 
 The TLS reference follows RFC 9325 (BCP 195) and the RFCs it cites; the file signature table
-cites the defining specification of each format; every cited URL was checked to resolve when
-written. The port reference is generated from the IANA registry (CC0 1.0) by
+cites the defining specification of each format. When written (2026-11-11), every cited RFC was
+downloaded and each cited section number checked against its heading, the RFC 9325 requirement
+sentences were read in the RFC text, and the other cited URLs returned HTTP 200 (except
+pdfa.org, which refuses automated clients). Section anchors of non-RFC documents were not checked. The port reference is generated from the IANA registry (CC0 1.0) by
 `npm run reference:ports` and committed with its retrieval date.
 
 ## D-025 — YAML parser dependency for the Sigma viewer
@@ -174,6 +176,6 @@ in the Sigma viewer's chunk, with unique keys enforced and alias expansion cappe
 ## D-026 — Two end-to-end workers
 
 On the development machine, several freshly started browsers loading the site at once
-occasionally never receive responses for route chunks (see QUALITY_REPORT.md). With one worker
-the stall did not occur; with two it occurred in one run out of five. Both local runs and CI use
-two workers.
+occasionally never receive responses for route chunks (see QUALITY_REPORT.md). In a small
+number of runs it did not occur with one worker and occurred in one run out of five with two.
+Both local runs and CI use two workers; this reduces the problem, it does not explain it.

@@ -123,6 +123,43 @@ describe('toolbox pages', () => {
     expect(await screen.findByText(en['tb.regex.unavailable'])).toBeInTheDocument();
   });
 
+  it('accepts versioned and container extensions as matching', async () => {
+    const user = userEvent.setup();
+    renderAt('/toolbox/file-meta');
+    const input = await screen.findByLabelText(en['toolbox.chooseFile']);
+    await user.upload(input, new File([new Uint8Array([0x7f, 0x45, 0x4c, 0x46, 0x02])], 'libssl.so.3'));
+    expect(await screen.findByText('ELF executable or object')).toBeInTheDocument();
+    expect(screen.queryByText(en['tb.file.mismatch'])).toBeNull();
+    await user.upload(input, new File([new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x14])], 'book.epub'));
+    expect((await screen.findAllByText(/^ZIP archive/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(en['tb.file.mismatch'])).toBeNull();
+  });
+
+  it('never shows the result of an earlier file under the name of a later one', async () => {
+    const user = userEvent.setup();
+    const fileLib = await import('../toolbox/lib/file');
+    let releaseFirst: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const real = fileLib.analyzeBlob;
+    vi.spyOn(fileLib, 'analyzeFile').mockImplementation(async (blob) => {
+      if ((blob as File).name === 'first.bin') await gate;
+      return real(blob);
+    });
+    renderAt('/toolbox/hash-file');
+    const input = await screen.findByLabelText(en['toolbox.chooseFile']);
+    const first = new Uint8Array([1, 2, 3]);
+    const second = new Uint8Array([4, 5, 6]);
+    await user.upload(input, new File([first], 'first.bin'));
+    await user.upload(input, new File([second], 'second.bin'));
+    expect(await screen.findByText(createHash('sha256').update(second).digest('hex'))).toBeInTheDocument();
+    releaseFirst();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByText(createHash('sha256').update(first).digest('hex'))).toBeNull();
+    expect(screen.getByText(/second\.bin/)).toBeInTheDocument();
+  });
+
   it('inspects a file locally and flags an extension mismatch', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.mocked(fetch);

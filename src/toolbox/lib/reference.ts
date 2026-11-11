@@ -59,7 +59,7 @@ export const TLS_RULES: readonly { id: string; basis: Citation[] }[] = [
   { id: 'sni', basis: [rfc(6066, '3'), rfc(9325, '3.7')] },
   { id: 'alpn', basis: [rfc(7301), rfc(9325, '3.8')] },
   { id: 'tickets', basis: [rfc(9325, '3.4')] },
-  { id: 'hsts', basis: [rfc(6797)] },
+  { id: 'hsts', basis: [rfc(6797), rfc(9325, '3.2')] },
 ];
 
 // ── File signatures ─────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ export interface FileSignature {
 const ascii = (text: string) => [...text].map((char) => char.charCodeAt(0));
 
 export const FILE_SIGNATURES: readonly FileSignature[] = [
-  { id: 'pe', label: 'Windows PE / MS-DOS executable', bytes: ascii('MZ'), offset: 0, extensions: ['exe', 'dll', 'sys', 'scr'], reference: { label: 'Microsoft PE format', url: 'https://learn.microsoft.com/windows/win32/debug/pe-format' } },
+  { id: 'pe', label: 'Windows PE / MS-DOS executable', bytes: ascii('MZ'), offset: 0, extensions: ['exe', 'dll', 'sys', 'scr', 'ocx', 'cpl', 'efi', 'mui', 'drv'], reference: { label: 'Microsoft PE format', url: 'https://learn.microsoft.com/windows/win32/debug/pe-format' } },
   { id: 'elf', label: 'ELF executable or object', bytes: [0x7f, ...ascii('ELF')], offset: 0, extensions: ['', 'so', 'o'], reference: { label: 'System V ABI (ELF)', url: 'https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html' } },
   { id: 'macho32', label: 'Mach-O 32-bit', bytes: [0xfe, 0xed, 0xfa, 0xce], offset: 0, extensions: [''], reference: { label: 'Apple mach-o/loader.h', url: 'https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/loader.h' } },
   { id: 'macho64', label: 'Mach-O 64-bit', bytes: [0xfe, 0xed, 0xfa, 0xcf], offset: 0, extensions: [''], reference: { label: 'Apple mach-o/loader.h', url: 'https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/loader.h' } },
@@ -88,7 +88,7 @@ export const FILE_SIGNATURES: readonly FileSignature[] = [
   { id: 'cafebabe', label: 'Java class file or Mach-O universal binary', bytes: [0xca, 0xfe, 0xba, 0xbe], offset: 0, extensions: ['class', ''], reference: { label: 'JVM Specification §4.1', url: 'https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-4.html#jvms-4.1' }, ambiguousWith: 'Mach-O fat binary' },
   { id: 'wasm', label: 'WebAssembly binary', bytes: [0x00, ...ascii('asm')], offset: 0, extensions: ['wasm'], reference: { label: 'WebAssembly Core §5.5.16', url: 'https://webassembly.github.io/spec/core/binary/modules.html#binary-module' } },
   { id: 'pdf', label: 'PDF document', bytes: ascii('%PDF-'), offset: 0, extensions: ['pdf'], reference: { label: 'ISO 32000-2 §7.5.2', url: 'https://pdfa.org/resource/iso-32000-2/' } },
-  { id: 'zip', label: 'ZIP archive (also DOCX, XLSX, PPTX, JAR, APK, ODT)', bytes: [0x50, 0x4b, 0x03, 0x04], offset: 0, extensions: ['zip', 'docx', 'xlsx', 'pptx', 'jar', 'apk', 'odt'], reference: { label: 'PKWARE APPNOTE §4.3.7', url: 'https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT' } },
+  { id: 'zip', label: 'ZIP archive (also DOCX, XLSX, PPTX, JAR, APK, ODT)', bytes: [0x50, 0x4b, 0x03, 0x04], offset: 0, extensions: ['zip', 'docx', 'xlsx', 'pptx', 'docm', 'xlsm', 'pptm', 'jar', 'war', 'ear', 'aar', 'apk', 'ipa', 'odt', 'ods', 'odp', 'epub', 'whl', 'xpi', 'vsix', 'nupkg', 'kmz', 'appx', 'msix'], reference: { label: 'PKWARE APPNOTE §4.3.7', url: 'https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT' } },
   { id: 'zipEmpty', label: 'ZIP archive (empty)', bytes: [0x50, 0x4b, 0x05, 0x06], offset: 0, extensions: ['zip'], reference: { label: 'PKWARE APPNOTE §4.3.16', url: 'https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT' } },
   { id: 'gzip', label: 'gzip compressed data', bytes: [0x1f, 0x8b], offset: 0, extensions: ['gz', 'tgz'], reference: rfc(1952, '2.3.1') },
   { id: 'bzip2', label: 'bzip2 compressed data', bytes: ascii('BZh'), offset: 0, extensions: ['bz2'], reference: { label: 'bzip2 format', url: 'https://sourceware.org/bzip2/' } },

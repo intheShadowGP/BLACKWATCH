@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
+import { attachResourceTimingOnFailure } from './diagnostics';
 
 test.use({ locale: 'en-US' });
+attachResourceTimingOnFailure();
 
 function collectErrors(page: Page) {
   const errors: string[] = [];

@@ -177,7 +177,8 @@ export function analyzeHeaders(headers: readonly ParsedHeader[]): HeaderCheck[] 
     if (/'unsafe-eval'/i.test(joined)) notes.push('cspUnsafeEval');
     if (!/(^|;)\s*(default-src|script-src)\b/i.test(joined)) notes.push('cspNoScriptSrc');
     if (/(^|;)\s*(default-src|script-src)[^;]*(\s|^)\*(\s|;|$)/i.test(joined)) notes.push('cspWildcard');
-    if (!/object-src/i.test(joined)) notes.push('cspNoObjectSrc');
+    // object-src falls back to default-src, so default-src 'none' already blocks plugins.
+    if (!/object-src/i.test(joined) && !/(^|;)\s*default-src\s+'none'\s*(;|$)/i.test(joined)) notes.push('cspNoObjectSrc');
     add('csp', notes.length > 0 ? 'weak' : 'present', csp, notes);
   }
 
@@ -296,7 +297,8 @@ export function analyzePassword(password: string): PasswordAnalysis {
   if (/(.)\1{2,}/.test(password) || (chars.length >= 4 && /^(.{1,4})\1+$/.test(password))) findings.push('repeated');
   if (/(19|20)\d{2}/.test(password) || /\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b/.test(password)) findings.push('date');
   if (chars.length < 12) findings.push('short');
-  if (Object.values(classes).filter(Boolean).length === 1) findings.push('singleClass');
+  // A long passphrase is strong without mixed classes; only short single-class passwords are flagged.
+  if (chars.length < 16 && Object.values(classes).filter(Boolean).length === 1) findings.push('singleClass');
 
   const verdict = findings.length > 0 ? 'weak' : 'noKnownWeakness';
   return { length: chars.length, classes, upperBoundBits, findings: [...new Set(findings)], verdict };

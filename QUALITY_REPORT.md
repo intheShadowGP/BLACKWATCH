@@ -10,10 +10,10 @@ Only checks that were actually executed are reported as passed. All runs below w
 | --- | --- | --- |
 | Lint | `npm run lint` | Passed, 0 findings |
 | Type check | `npm run typecheck` | Passed (strict, `noUncheckedIndexedAccess`) |
-| Unit, integration and pipeline tests | `npm test` | Passed, 420 tests in 15 files |
+| Unit, integration and pipeline tests | `npm test` | Passed, 429 tests in 15 files |
 | Data pipeline against live sources | `npm run data:build` | 5/5 datasets fresh (KEV 1,779; NVD recent 4,694; NVD KEV 1,779; ATT&CK v20.1, 706 techniques; CERT-FR 80) |
 | Production build | `npm run build` | Passed (main bundle 551 kB, 174 kB gzip; the increase is the toolbox translations, which load with the shell) |
-| Repository identity check | `npm run check:identity` | Passed, 110 files plus build output |
+| Repository identity check | `npm run check:identity` | Passed, 111 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
 | End-to-end tests | `npm run test:e2e` | 44 tests (22 scenarios × desktop and mobile Chromium), fixture data: 4 of 5 consecutive full runs passed 44/44, one had 1 failure (see Observations) |
 
@@ -30,10 +30,10 @@ Only checks that were actually executed are reported as passed. All runs below w
 | --- | --- | --- |
 | Lint | `npm run lint` | Passed, 0 findings |
 | Type check | `npm run typecheck` | Passed (strict, `noUncheckedIndexedAccess`) |
-| Unit, integration and pipeline tests | `npm test` | Passed, 420 tests in 15 files |
+| Unit, integration and pipeline tests | `npm test` | Passed, 429 tests in 15 files |
 | Data pipeline against live sources | `npm run data:build` | 5/5 datasets fresh (KEV 1,779; NVD recent 4,694; NVD KEV 1,779; ATT&CK v20.1, 706 techniques; CERT-FR 80) |
 | Production build | `npm run build` | Passed (main bundle 551 kB, 174 kB gzip; the increase is the toolbox translations, which load with the shell) |
-| Repository identity check | `npm run check:identity` | Passed, 110 files plus build output |
+| Repository identity check | `npm run check:identity` | Passed, 111 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
 | End-to-end tests | `npm run test:e2e` | 44 tests (22 scenarios × desktop and mobile Chromium), fixture data: 4 of 5 consecutive full runs passed 44/44, one had 1 failure (see Observations) |
 
@@ -42,6 +42,10 @@ Manual review in a browser with the live datasets: overview, Vulnerability Cente
 on 40 "a" followed by "!" was stopped after 2 seconds and reported, with the page still usable.
 
 ## Cross-check against real data
+
+- File hashing on the production build: a 496 MB random file was hashed with all five algorithms
+  in a worker in 9.3 s (Chromium, development machine), matching the SHA-256 computed by Node.
+  This is the basis for the 512 MB limit.
 
 - CVSS 3.x base scores recomputed locally for 5,686 NVD records (latest datasets): 0 mismatch
   with the published score.
@@ -132,6 +136,9 @@ on 40 "a" followed by "!" was stopped after 2 seconds and reported, with the pag
   - With a request-logging server, every request the server received was answered within 10 ms
     (241 received, 241 answered) during a failing run.
   - Warming the built files before the tests did not help.
+
+  - Resource timing captured at failure lists only the main bundle and stylesheet: the route
+    chunk requests never completed in the browser.
 
   The stall therefore lies between the browser and the loopback server on this machine; neither
   the server nor a defect in the route code has been shown to cause it. Not resolved; CI retries

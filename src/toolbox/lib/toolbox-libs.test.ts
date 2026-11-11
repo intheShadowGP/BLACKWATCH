@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { analyzeJson, decodeJwt, entropyProfile, formatJson, shannonEntropy } from './analysis';
+import { analyzeJson, decodeJwt, entropyProfile, formatJson, MAX_JSON_ISSUES, shannonEntropy } from './analysis';
 import { base64Decode, base64Encode, fromHex, hexDump, printableText, toHex, utf8DecodeStrict, utf8Encode } from './bytes';
 import { compressIpv6, ipv4Info, ipv4Subnet, ipv6Info, splitSubnet } from './net';
 import { parseIpv6 } from '../../lib/ioc';
@@ -120,6 +120,17 @@ describe('analyzeJson', () => {
     expect(result.ok && formatJson(result.value, null)).toBe('{"__proto__":{"polluted":true}}');
   });
 
+  it('analyses a large document quickly and caps the issue list', () => {
+    const numbers = Array.from({ length: 200_000 }, (_, index) => (index % 2 === 0 ? '9007199254740993' : String(index))).join(',\n');
+    const text = `[${numbers}]`;
+    expect(text.length).toBeGreaterThan(1_000_000);
+    const started = performance.now();
+    const result = analyzeJson(text);
+    expect(performance.now() - started).toBeLessThan(2000);
+    expect(result.ok && result.issues.length).toBe(MAX_JSON_ISSUES);
+    expect(result.ok && result.issues[1]).toMatchObject({ kind: 'unsafeInteger', line: 3, column: 1 });
+  });
+
   it('limits nesting depth without overflowing the stack', () => {
     const result = analyzeJson(`${'['.repeat(100_000)}${']'.repeat(100_000)}`);
     expect(result.ok).toBe(false);
@@ -185,7 +196,13 @@ describe('IPv4 and CIDR', () => {
     expect(ipv4Subnet(input)).toMatchObject(expected);
   });
 
-  it.each(['10.0.0.0/33', '10.0.0.0/-1', '10.0.0.0', '10.0.0.0/255.0.255.0', '10.0.0.256/8', 'x/8'])('rejects %s', (input) => {
+  it('accepts the all-ones and all-zeros netmasks', () => {
+    expect(ipv4Subnet('10.1.2.3 255.255.255.255')?.prefix).toBe(32);
+    expect(ipv4Subnet('10.1.2.3 0.0.0.0')?.prefix).toBe(0);
+    expect(ipv4Subnet('10.1.2.3 255.255.255.0')?.prefix).toBe(24);
+  });
+
+  it.each(['10.0.0.0/33', '10.0.0.0/-1', '10.0.0.0', '10.0.0.0/255.0.255.0', '10.0.0.256/8', 'x/8', '10.1.2.0 0.0.0.255', '10.1.2.0 0.255.255.255', '10.1.2.0 255.255.0.255'])('rejects %s', (input) => {
     expect(ipv4Subnet(input)).toBeNull();
   });
 
@@ -291,6 +308,13 @@ describe('header analysis', () => {
     expect(checks.cookies?.notes).toEqual(['cookieNoSecure:session', 'cookieNoSameSite:session']);
   });
 
+  it("does not ask for object-src when default-src is 'none'", () => {
+    const strict = analyzeHeaders(parseHeaders("Content-Security-Policy: default-src 'none'; script-src 'self'").headers);
+    expect(strict.find((check) => check.id === 'csp')).toMatchObject({ state: 'present', notes: [] });
+    const loose = analyzeHeaders(parseHeaders("Content-Security-Policy: default-src 'self'").headers);
+    expect(loose.find((check) => check.id === 'csp')?.notes).toEqual(['cspNoObjectSrc']);
+  });
+
   it('accepts frame-ancestors as frame protection', () => {
     const result = analyzeHeaders(parseHeaders("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; object-src 'none'").headers);
     expect(result.find((check) => check.id === 'frameProtection')?.state).toBe('present');
@@ -313,6 +337,11 @@ describe('analyzePassword', () => {
     expect(analyzePassword('Password1!').findings).not.toContain('leet');
     expect(analyzePassword('aaaaaaaaaaaaaaaa').findings).toContain('repeated');
     expect(analyzePassword('xk9-Tq2#mZ7!vL4@').findings).toEqual([]);
+  });
+
+  it('does not penalise a long passphrase for using one character class', () => {
+    expect(analyzePassword('correct horse battery staple').findings).toEqual([]);
+    expect(analyzePassword('lowercaseonly').findings).toContain('singleClass');
   });
 
   it('reports an upper bound on entropy, not a strength guarantee', () => {

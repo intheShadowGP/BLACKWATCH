@@ -70,10 +70,11 @@ export function ipv4Subnet(input: string): Ipv4Subnet | null {
   if (maskPart.includes('.')) {
     const maskOctets = parseIpv4(maskPart);
     if (!maskOctets) return null;
-    const mask = ipv4ToInt(maskOctets);
-    const ones = mask.toString(2).replace(/0+$/, '');
-    if (mask !== 0 && (ones.includes('0') || ones.length === 0)) return null;
-    prefix = mask === 0 ? 0 : ones.length;
+    // A netmask is contiguous ones followed by zeros over all 32 bits. Wildcard
+    // (inverse) masks such as 0.0.0.255 are rejected rather than misread.
+    const bits = ipv4ToInt(maskOctets).toString(2).padStart(32, '0');
+    if (!/^1*0*$/.test(bits)) return null;
+    prefix = bits.indexOf('0') === -1 ? 32 : bits.indexOf('0');
   } else {
     prefix = Number(maskPart);
   }

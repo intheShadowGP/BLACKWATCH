@@ -4,7 +4,7 @@ import { ExternalLink, Tag } from '../../components/data';
 import { IocExplorer } from '../../components/IocExplorer';
 import { Button } from '../../components/ui';
 import type { MessageKey } from '../../i18n';
-import { analyzeJson, decodeJwt, formatJson, MAX_JSON_CHARS } from '../lib/analysis';
+import { analyzeJson, decodeJwt, formatJson, MAX_JSON_CHARS, MAX_JSON_ISSUES } from '../lib/analysis';
 import { MAX_REGEX_PATTERN, MAX_REGEX_TEXT, REGEX_FLAGS, runRegex, type RegexResult } from '../lib/regex';
 import { analyzeHeaders, analyzePassword, MAX_HEADER_CHARS, MAX_URL_CHARS, parseHeaders, parseUrl } from '../lib/web';
 import { KeyValues, Message, Output, TextArea, TextLine } from '../ui';
@@ -67,6 +67,7 @@ export function JsonTool() {
               ))}
             </ul>
           ) : null}
+          {result.issues.length >= MAX_JSON_ISSUES ? <Message tone="warning">{t('tb.json.issuesCapped', { n: MAX_JSON_ISSUES })}</Message> : null}
           <div className="flex gap-2">
             <Button onClick={() => setIndent(2)} aria-pressed={indent === 2}>
               {t('tb.json.format')}

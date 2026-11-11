@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../app/preferences-context';
-import { ExternalLink, Tag } from '../../components/data';
+import { Tag } from '../../components/data';
 import { Button, Panel } from '../../components/ui';
 import { MAX_RULE_CHARS, parseSigma, parseYara, type SigmaParseResult, type YaraParseResult } from '../lib/rules';
 import { Message, Output, TextArea } from '../ui';
@@ -139,9 +139,10 @@ export function SigmaTool() {
                 {rule.references.length > 0 ? (
                   <div>
                     <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-subtle">{t('tb.sigma.references')}</h3>
-                    <ul className="space-y-1 break-all text-xs">
+                    {/* References come from pasted, untrusted rules: shown as text, never as live links. */}
+                    <ul className="space-y-1 break-all font-mono text-xs text-muted">
                       {rule.references.map((reference) => (
-                        <li key={reference}>{/^https?:\/\//i.test(reference) ? <ExternalLink href={reference}>{reference}</ExternalLink> : reference}</li>
+                        <li key={reference}>{reference}</li>
                       ))}
                     </ul>
                   </div>

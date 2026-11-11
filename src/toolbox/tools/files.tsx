@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useI18n } from '../../app/preferences-context';
 import { ExternalLink, Tag } from '../../components/data';
 import { formatDateTime } from '../../lib/format';
@@ -18,11 +18,18 @@ interface Selected {
 function useFileAnalysis() {
   const [selected, setSelected] = useState<Selected | null>(null);
   const [result, setResult] = useState<FileAnalysisResult | 'pending' | null>(null);
+  // Each pick gets a sequence number; a result that arrives after a newer pick is discarded,
+  // so the hashes of one file can never be shown under the name of another.
+  const sequence = useRef(0);
   const pick = (file: File) => {
+    sequence.current += 1;
+    const current = sequence.current;
     // Only metadata is kept in state; the file name is displayed as text.
     setSelected({ name: file.name.slice(0, 255), type: file.type, lastModified: file.lastModified });
     setResult('pending');
-    void analyzeFile(file).then(setResult);
+    void analyzeFile(file).then((analysis) => {
+      if (current === sequence.current) setResult(analysis);
+    });
   };
   return { selected, result, pick };
 }
@@ -113,8 +120,10 @@ export function FileMetaTool() {
   const { selected, result, pick } = useFileAnalysis();
   const report = result !== null && result !== 'pending' && result.status === 'ok' ? result.report : null;
   const signatures = report ? FILE_SIGNATURES.filter((signature) => report.signatures.includes(signature.id)) : [];
-  const extension = selected?.name.includes('.') ? selected.name.split('.').pop()?.toLowerCase() ?? '' : '';
-  const mismatch = signatures.length > 0 && !signatures.some((signature) => signature.extensions.includes(extension));
+  // Every dot-separated suffix counts, so versioned names such as libssl.so.3 match "so".
+  const suffixes = selected ? selected.name.toLowerCase().split('.').slice(1) : [];
+  const extensions = suffixes.length === 0 ? [''] : suffixes;
+  const mismatch = signatures.length > 0 && !signatures.some((signature) => signature.extensions.some((known) => extensions.includes(known)));
 
   return (
     <div className="space-y-4">

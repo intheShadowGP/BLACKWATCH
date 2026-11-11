@@ -54,6 +54,9 @@ export type JsonAnalysis =
 
 export const MAX_JSON_CHARS = 5_000_000;
 const MAX_DEPTH = 512;
+/** Only the first issues are reported; the interface says when the list is capped. */
+export const MAX_JSON_ISSUES = 200;
+const MAX_ISSUES = MAX_JSON_ISSUES;
 
 /**
  * Strict JSON (RFC 8259) parser that reports the position of the first error
@@ -65,16 +68,25 @@ export function analyzeJson(text: string): JsonAnalysis {
   let maxDepth = 0;
   const issues: JsonIssue[] = [];
 
+  // Line starts are indexed once, so locating a position is a binary search
+  // rather than a scan from the beginning of the text.
+  let lineStarts: number[] | null = null;
   const location = (at: number) => {
-    let line = 1;
-    let lineStart = 0;
-    for (let index = 0; index < at && index < text.length; index += 1) {
-      if (text.charCodeAt(index) === 10) {
-        line += 1;
-        lineStart = index + 1;
-      }
+    if (lineStarts === null) {
+      lineStarts = [0];
+      for (let index = 0; index < text.length; index += 1) if (text.charCodeAt(index) === 10) lineStarts.push(index + 1);
     }
-    return { line, column: at - lineStart + 1 };
+    let low = 0;
+    let high = lineStarts.length - 1;
+    while (low < high) {
+      const middle = (low + high + 1) >> 1;
+      if ((lineStarts[middle] as number) <= at) low = middle;
+      else high = middle - 1;
+    }
+    return { line: low + 1, column: at - (lineStarts[low] as number) + 1 };
+  };
+  const addIssue = (issue: Omit<JsonIssue, 'line' | 'column'>, at: number) => {
+    if (issues.length < MAX_ISSUES) issues.push({ ...issue, ...location(at) });
   };
 
   class ParseError extends Error {
@@ -131,11 +143,10 @@ export function analyzeJson(text: string): JsonAnalysis {
     const literal = match[0];
     position += literal.length;
     const value = Number(literal);
-    const where = location(start);
     if (/^-?\d+$/.test(literal) && !Number.isSafeInteger(value)) {
-      issues.push({ kind: 'unsafeInteger', ...where, detail: literal });
+      addIssue({ kind: 'unsafeInteger', detail: literal }, start);
     } else if (!Number.isFinite(value)) {
-      issues.push({ kind: 'precisionLoss', ...where, detail: literal });
+      addIssue({ kind: 'precisionLoss', detail: literal }, start);
     }
     return value;
   };
@@ -159,7 +170,7 @@ export function analyzeJson(text: string): JsonAnalysis {
         if (text[position] !== '"') fail('Expected a property name in double quotes');
         const keyAt = position;
         const key = parseString();
-        if (seen.has(key)) issues.push({ kind: 'duplicateKey', ...location(keyAt), detail: key });
+        if (seen.has(key)) addIssue({ kind: 'duplicateKey', detail: key.slice(0, 200) }, keyAt);
         seen.add(key);
         skipWhitespace();
         if (text[position] !== ':') fail("Expected ':' after property name");
