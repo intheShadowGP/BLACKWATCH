@@ -109,7 +109,7 @@ Dataset text is written by the publishers and may name any vendor or product, in
 vendors (ATT&CK documents campaigns that used AI tools). Removing or rewriting such records would
 falsify the intelligence. `scripts/check-identity.mjs` therefore skips `dist/data/*.json` except
 `manifest.json`, which this project writes. The rule still applies to all project code,
-documentation, metadata and Git history. Status: pending confirmation by the project owner.
+documentation, metadata and Git history. Status: confirmed by the project owner on 2026-11-11.
 
 ## D-017 — Transparent prioritisation
 
