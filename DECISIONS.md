@@ -179,3 +179,59 @@ On the development machine, several freshly started browsers loading the site at
 occasionally never receive responses for route chunks (see QUALITY_REPORT.md). In a small
 number of runs it did not occur with one worker and occurred in one run out of five with two.
 Both local runs and CI use two workers; this reduces the problem, it does not explain it.
+
+## D-027 — SOC Workbench: parsing in a worker, state above the routes
+
+Imported files are read, identified, parsed and analysed in a module worker; the parsed result is
+held in a React context above the routes, so following a link to a CVE or a tool keeps the
+import. Nothing is persisted unless the analyst saves an investigation; reloading clears it. The
+engine is loaded on first use, so the shell does not carry it. Windows Event XML is read by a small
+XML reader written for this purpose (DOMParser is unavailable in workers); document type and
+entity declarations are refused.
+
+## D-028 — Explicit time assumptions
+
+Classic syslog has no year and many logs have no time zone. The year of the last line and the
+offset of zone-less timestamps are settings shown on screen and written into the report; such
+timestamps are marked "inferred". The year is inferred backwards across December-to-January
+rollovers. Events without a readable timestamp are kept, counted, shown, and excluded from
+time-window rules with a per-rule count.
+
+## D-029 — Counting authentication attempts
+
+One SSH attempt is one sshd "Failed <method> for … from …" line. PAM lines describing the same
+attempt and "PAM n more authentication failures" summaries are informational, so an attempt is
+never counted twice; "message repeated N times" counts N. sudo "n incorrect password attempts"
+counts n.
+
+## D-030 — Sigma subset evaluated as string matching
+
+The workbench evaluates a documented Sigma subset (field selections, keyword lists, contains,
+startswith, endswith, all, wildcards, null values, and/or/not, "1 of", "all of", "them"). Matching
+compares strings only; nothing in a rule is compiled to code or to a regular expression, and
+wildcards use an iterative matcher. This is consistent with the toolbox statement that rules are
+never executed: a rule is data compared against events. Unsupported constructs (regular
+expressions, other modifiers, aggregations, timeframes, correlations) reject the whole rule with
+the reason, and a rule whose log source or fields are absent from the imported events is reported
+as not applicable rather than as having no match.
+
+## D-031 — Measured limits
+
+On the development machine (Chromium): a 97 MB access log of 560,000 lines was analysed in 3.1 s,
+stopping at the 500,000-event cap, with about 330 MB of JavaScript heap. Saving 100,000 events in
+IndexedDB took 0.4 s and the Settings export of the resulting 105 MB took 0.5 s; a 500,000-event
+save did not complete within 5 minutes. Limits are therefore 100 MB per file, 50 files, 500,000
+events per analysis and 100,000 events per saved investigation.
+
+## D-032 — Reports in Markdown, never HTML
+
+Log content is attacker-controlled and a downloaded HTML file would open without the site's CSP.
+Reports are Markdown: inline text is escaped and excerpts are placed in code fences longer than
+any backtick run they contain. CSV exports use the formula-neutralising cell encoder.
+
+## D-033 — Verified identifiers in detections
+
+Windows event identifiers were checked against Microsoft's audit event documentation (4624, 4625,
+4688, 4720, 4732, 4740, 1102 on their own pages; 4728 and 4756 on the security group management
+page). ATT&CK technique identifiers are checked by a test against the published dataset when it is
+present; this caught that Clear Windows Event Logs is T1685.005 in ATT&CK v20.

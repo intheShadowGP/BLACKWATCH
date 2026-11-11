@@ -1,7 +1,9 @@
+import { socEn } from './soc.en';
 import { toolboxEn } from './toolbox.en';
 
 export const en = {
   ...toolboxEn,
+  ...socEn,
   'app.tagline': 'Privacy first. Intelligence driven. Built for professionals.',
   'app.loading': 'Loading…',
 

@@ -1,6 +1,6 @@
 {
   "name": "blackwatch",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "BLACKWATCH — privacy-first cybersecurity workbench: threat intelligence, vulnerability management, SOC tooling and incident response training.",
   "type": "module",

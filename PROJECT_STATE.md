@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-11-11 · Version 0.3.0
+Last updated: 2026-11-11 · Version 0.4.0
 
 ## Summary
 
@@ -16,7 +16,7 @@ the repository has no remote yet.
 | 0 — Foundation | Complete, tested locally; first deployment pending |
 | 1 — Intelligence | Mostly complete (see "Partially implemented"); deployment pending |
 | 2 — Security Toolbox | Complete, tested locally |
-| 3 — SOC Workbench | Not started |
+| 3 — SOC Workbench | Complete, tested locally |
 | 4 — Cyber Lab | Not started |
 | 5 — Production hardening | Not started |
 
@@ -47,6 +47,15 @@ the repository has no remote yet.
   IPv4/IPv6/CIDR calculators; IANA port registry search; HTTP header analyzer; password pattern
   checks; TLS reference from RFC 9325; Sigma and YARA structural viewers; shared IOC explorer.
 
+- **SOC Workbench:** multi-file local import in a worker; parsers for JSON/JSON Lines (incl.
+  journald), CSV, syslog (RFC 3164, RFC 5424, ISO; auth.log, secure), Apache/Nginx access and error
+  logs, Windows Event XML (UTF-8/UTF-16, with or without <Events> root); binary inputs (EVTX, gzip,
+  zip, pcap…) recognised with instructions; per-file statistics with unparsed samples; year and
+  time-zone settings; 12 detection rules with parameters, ATT&CK mapping and contributing events;
+  documented Sigma subset with "not applicable" and "unsupported" outcomes; events table with
+  filters and flags, timeline, entities; explicit save of investigations; Markdown report, CSV and
+  JSON exports.
+
 ## Partially implemented
 
 - Vulnerability Center: no OSV or GitHub Advisory Database data; CVEs older than 7 days are only
@@ -58,7 +67,7 @@ the repository has no remote yet.
 
 ## Not implemented
 
-SOC Workbench, Cyber Lab, PWA and offline support.
+Cyber Lab, PWA and offline support.
 
 ## Deployment
 

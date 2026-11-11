@@ -49,7 +49,7 @@ export const MODULES: readonly ModuleDefinition[] = [
     titleKey: 'nav.soc',
     summaryKey: 'module.soc.summary',
     scopeKey: 'module.soc.scope',
-    status: 'planned',
+    status: 'available',
     milestone: 3,
   },
   {

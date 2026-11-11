@@ -45,11 +45,14 @@
 
 ## Milestone 3 — SOC Workbench
 
-- [ ] Import with size and parsing limits; format detection
-- [ ] Parsers: JSON, CSV, syslog, Linux authentication, SSH, Apache, Nginx, Windows Event XML
-- [ ] Normalised event model, filtering, search, timeline, correlation
-- [ ] Detection rules and a documented Sigma subset
-- [ ] Investigations, notes, exportable reports
+- [x] Import with size and event limits (measured); format detection with manual override
+- [x] Parsers: JSON, CSV, syslog, Linux authentication, SSH, Apache, Nginx, Windows Event XML
+- [x] Normalised event model, filtering, search, timeline, entities
+- [x] Detection rules (12) and a documented Sigma subset
+- [x] Investigations (explicit save), notes, flags, Markdown/CSV/JSON exports
+- [ ] Binary EVTX parser (currently: export to XML first)
+- [ ] Configurable rule parameters
+- [ ] Saving investigations above 100,000 events (chunked storage)
 
 ## Milestone 4 — Cyber Lab
 

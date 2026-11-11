@@ -7,9 +7,9 @@ vulnerability management, SOC investigation tooling, MITRE ATT&CK exploration, s
 and incident response training. It is a static application — no account, no backend, no tracking.
 Files and text you provide are processed locally and never leave your device.
 
-> **Status: 0.3.0 — Milestones 1 (intelligence) and 2 (Security Toolbox).** The foundation, the
-> intelligence modules and the Security Toolbox work; intelligence modules use real, traceable
-> public data. The SOC Workbench and Cyber Lab are **not implemented yet**; the application says so on their pages and shows no
+> **Status: 0.4.0 — Milestones 1 to 3.** The foundation, the intelligence modules, the Security
+> Toolbox and the SOC Workbench work; intelligence modules use real, traceable public data. The
+> Cyber Lab is **not implemented yet**; the application says so on their pages and shows no
 > placeholder data. See [PROJECT_STATE.md](PROJECT_STATE.md) for the exact status.
 
 ## Features
@@ -24,7 +24,7 @@ Files and text you provide are processed locally and never leave your device.
 | Vulnerability Center: CVE search, CVSS 3.x and 4.0, CWE, CISA KEV status, explained prioritisation, watchlist, CSV export, print | Partial: CVEs of the last 7 days plus all KEV entries only; no OSV or GitHub Advisory data |
 | MITRE ATT&CK Explorer: Enterprise matrix, techniques, sub-techniques, groups, software, campaigns, mitigations, detection strategies, relationships | Implemented, tested |
 | Threat Intelligence: CERT-FR and KEV feed, IOC explorer (extraction, validation, classification, export), threat actors, campaign timeline, notes | Partial: no indicator reputation feeds, no indicator relationship graph |
-| SOC Workbench | Planned (Milestone 3) |
+| SOC Workbench: local import of JSON/JSON Lines, CSV, syslog and auth logs, Apache/Nginx access and error logs, Windows Event XML; format detection with override; parse statistics; explicit time assumptions; 12 detection rules; Sigma subset; events, timeline, entities; saved investigations; Markdown, CSV and JSON exports | Implemented, tested. Binary EVTX is not supported (export to XML first) |
 | Security Toolbox: 20 local tools (hashing incl. MD5 and files, Base64, hex, entropy, JWT, JSON, URL, IOC, regex with timeout, IPv4/IPv6/CIDR, IANA ports, HTTP headers, password patterns, TLS reference, Sigma and YARA viewers, file inspector) | Implemented, tested |
 | Cyber Lab | Planned (Milestone 4) |
 | PWA / offline mode | Planned (Milestone 5) |
@@ -52,6 +52,7 @@ src/
   i18n/        English and French dictionaries
   lib/         CVSS, IOC, ATT&CK, prioritisation, export, storage
   toolbox/     tool registry, pure tool libraries, workers, tool views
+  soc/         log parsers, detections, Sigma subset, worker, workbench views
   pages/       one lazily loaded view per route
 scripts/data/  data pipeline (retrieval, normalisation)
 e2e/           Playwright end-to-end tests (production build, fixture data)
@@ -173,7 +174,10 @@ Issues and pull requests are welcome. Before opening a pull request:
 
 ## Known limitations
 
-- SOC Workbench and Cyber Lab are not implemented (see the table above).
+- Cyber Lab is not implemented (see the table above).
+- SOC Workbench: binary EVTX is not read (export to XML); Sigma support is a documented subset;
+  detections are heuristics with fixed parameters; limits are 100 MB per file, 500,000 events per
+  analysis and 100,000 events per saved investigation (measured, see DECISIONS.md D-031).
 - Toolbox: CVSS-style or password "scores" are not produced on purpose; Sigma and YARA rules are
   displayed, never executed; regular expressions use JavaScript syntax only.
 - The Vulnerability Center only covers CVEs published in the 7 days before the last dataset
