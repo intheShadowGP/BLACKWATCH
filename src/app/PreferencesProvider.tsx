@@ -45,20 +45,36 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }));
   // Mirror of the current preferences for event handlers, so updates never read stale state.
   const latest = useRef(state.preferences);
+  // Until the stored record has been read, changes are kept here and not written,
+  // so a slow read can never be overwritten by defaults.
+  const storedLoaded = useRef(false);
+  const pendingPatch = useRef<Partial<Preferences>>({});
   const prefersLight = useSyncExternalStore(subscribeToSystemTheme, systemPrefersLight, () => false);
 
   useEffect(() => {
     let cancelled = false;
-    const fallback = new Promise<Awaited<ReturnType<typeof loadPreferences>>>((resolve) => {
-      window.setTimeout(() => resolve({ preferences: browserDefaults(), persistent: true }), PREFERENCES_TIMEOUT_MS);
-    });
-    void Promise.race([loadPreferences(browserDefaults()), fallback]).then((loaded) => {
+    // Show the interface with defaults if storage is slow, but keep waiting for the real record.
+    const timer = window.setTimeout(() => {
+      if (!cancelled) setState((current) => (current.ready ? current : { ...current, ready: true }));
+    }, PREFERENCES_TIMEOUT_MS);
+    void loadPreferences(browserDefaults()).then((loaded) => {
+      window.clearTimeout(timer);
       if (cancelled) return;
-      latest.current = loaded.preferences;
-      setState({ ...loaded, ready: true });
+      storedLoaded.current = true;
+      const patch = pendingPatch.current;
+      pendingPatch.current = {};
+      const next = { ...loaded.preferences, ...patch };
+      latest.current = next;
+      setState({ preferences: next, persistent: loaded.persistent, ready: true });
+      if (Object.keys(patch).length > 0 && loaded.persistent) {
+        void savePreferences(next).then((saved) => {
+          if (!saved) setState((current) => ({ ...current, persistent: false }));
+        });
+      }
     });
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
   }, []);
 
@@ -78,6 +94,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     const next = { ...latest.current, ...patch };
     latest.current = next;
     setState((current) => ({ ...current, preferences: next }));
+    if (!storedLoaded.current) {
+      pendingPatch.current = { ...pendingPatch.current, ...patch };
+      return;
+    }
     void savePreferences(next).then((saved) => {
       if (!saved) setState((current) => (current.persistent ? { ...current, persistent: false } : current));
     });

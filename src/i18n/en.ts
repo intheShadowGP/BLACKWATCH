@@ -233,6 +233,8 @@ export const en = {
   'vuln.detail.modified': 'Last modified',
   'vuln.detail.noNvdRecord': 'No NVD record is available in the dataset; the description comes from the KEV catalog.',
   'vuln.detail.references': 'References',
+  'vuln.detail.referencesPartial':
+    '{shown} of {total} references are shown, those tagged as patch, advisory or mitigation first. The NVD record lists them all.',
   'vuln.detail.noReferences': 'No reference is published in the dataset.',
   'vuln.detail.weaknesses': 'Weaknesses (CWE)',
   'vuln.detail.noWeaknesses': 'No CWE is assigned in the dataset.',

@@ -38,9 +38,12 @@ jobs:
       # A source that fails keeps the last valid copy from the deployed site
       # (marked "stale"); a source with no valid copy is marked "missing".
       - name: Build datasets
-        run: npm run data:build
+        # The fallback URL is the deployed project site, built from variables
+        # that are set for every trigger, scheduled runs included.
+        run: |
+          export DATA_FALLBACK_URL="https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
+          npm run data:build
         env:
-          DATA_FALLBACK_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
           # Optional repository secret; the pipeline respects the public rate limit without it.
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       # lint -> typecheck -> unit tests -> build -> identity check; any failure stops the deployment.

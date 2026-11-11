@@ -19,6 +19,7 @@ function cve(id: string, overrides: Partial<CveItem> = {}): CveItem {
     cwes: ['CWE-79'],
     products: ['examplevendor:exampleproduct'],
     references: [{ url: 'https://vendor.example/advisory-1', tags: ['Patch', 'Vendor Advisory'] }],
+    referenceCount: 1,
     ...overrides,
   };
 }
@@ -33,8 +34,9 @@ export const nvdRecent: CveDataset = {
       description: `Hostile markup ${HOSTILE}`,
       cvss3: { version: '3.1', score: 6.1, severity: 'MEDIUM', vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N', source: 'nvd@nist.gov' },
       references: [],
+      referenceCount: 0,
     }),
-    cve('CVE-2026-10003', { cvss3: null, status: 'Awaiting Analysis', cwes: [], products: [], references: [] }),
+    cve('CVE-2026-10003', { cvss3: null, status: 'Awaiting Analysis', cwes: [], products: [], references: [], referenceCount: 0 }),
   ],
 };
 

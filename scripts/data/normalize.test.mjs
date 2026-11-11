@@ -91,6 +91,19 @@ describe('normalizeCve', () => {
     expect(normalizeCve(wrapper).references).toEqual([{ url: 'https://vendor.example/advisory', tags: ['Patch', 'Vendor Advisory'] }]);
   });
 
+  it('keeps remediation references first within the limit and records the total', () => {
+    const references = [
+      ...Array.from({ length: 14 }, (_, index) => ({ url: `https://info.example/${index}`, tags: ['Third Party Advisory'] })),
+      { url: 'https://vendor.example/fix', tags: ['Patch'] },
+      { url: 'https://vendor.example/advisory', tags: ['Vendor Advisory'] },
+    ];
+    const item = normalizeCve({ cve: { ...wrapper.cve, references } });
+    expect(item.referenceCount).toBe(16);
+    expect(item.references).toHaveLength(12);
+    expect(item.references.slice(0, 2).map((reference) => reference.url)).toEqual(['https://vendor.example/fix', 'https://vendor.example/advisory']);
+    expect(item.references[2].url).toBe('https://info.example/0');
+  });
+
   it('leaves scores empty when none is published', () => {
     const item = normalizeCve({ cve: { id: 'CVE-2026-1', published: '2026-01-01', lastModified: '2026-01-01' } });
     expect(item).toBeNull();

@@ -96,7 +96,10 @@ export const cveItemSchema = z.object({
   cwes: z.array(z.string().regex(/^CWE-\d+$/)).max(30),
   /** "vendor:product" pairs taken from CPE match criteria and affected-product data. */
   products: z.array(text(300)).max(25),
+  /** At most 12 references, those tagged Patch, Vendor Advisory or Mitigation first. */
   references: z.array(z.object({ url: httpUrl, tags: z.array(text(60)).max(10) })).max(12),
+  /** Number of valid references in the NVD record, before the selection above. */
+  referenceCount: z.number().int().nonnegative(),
 });
 export type CveItem = z.infer<typeof cveItemSchema>;
 

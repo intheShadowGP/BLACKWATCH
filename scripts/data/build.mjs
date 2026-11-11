@@ -18,7 +18,6 @@
 //
 // Requires Node.js 24 or later (imports the TypeScript schema file directly).
 
-import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +26,7 @@ import {
   DATASET_SCHEMAS,
   manifestSchema,
 } from '../../src/data/schemas.ts';
+import { selectPreviousCopy, sha256 } from './fallback.mjs';
 import { normalizeAttack, normalizeCertfr, normalizeCveList, normalizeKev } from './normalize.mjs';
 
 const OUTPUT = fileURLToPath(new URL('../../public/data/', import.meta.url));
@@ -175,8 +175,6 @@ const DATASETS = [
   },
 ];
 
-const sha256 = (content) => createHash('sha256').update(content).digest('hex');
-
 async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'));
 }
@@ -197,19 +195,7 @@ async function previousCopy(definition, file) {
       content: await fetchText(`${base}data/${file}`, { attempts: 1 }),
     }));
   }
-  for (const load of sources) {
-    try {
-      const { manifest, content } = await load();
-      const entry = manifestSchema.parse(manifest).datasets.find((item) => item.id === definition.id);
-      if (!entry || entry.status === 'missing' || !entry.retrievedAt) continue;
-      if (entry.sha256 && entry.sha256 !== sha256(content)) continue;
-      DATASET_SCHEMAS[definition.id].parse(JSON.parse(content));
-      return { entry, content };
-    } catch {
-      // Try the next source.
-    }
-  }
-  return null;
+  return selectPreviousCopy(definition.id, sources);
 }
 
 async function writeAtomic(path, content) {

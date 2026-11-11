@@ -181,6 +181,9 @@ export default function CveDetailPage() {
           </Panel>
 
           <Panel title={t('vuln.detail.references')}>
+            {cve && cve.referenceCount > cve.references.length ? (
+              <p className="mb-3 text-xs text-subtle">{t('vuln.detail.referencesPartial', { shown: cve.references.length, total: cve.referenceCount })}</p>
+            ) : null}
             {cve && cve.references.length > 0 ? (
               <ul className="space-y-2 text-sm">
                 {cve.references.map((reference) => (

@@ -105,6 +105,24 @@ function extractProducts(cve) {
   return unique(products.map((value) => value.toLowerCase())).slice(0, 25);
 }
 
+const MAX_REFERENCES = 12;
+const REMEDIATION_TAGS = new Set(['Patch', 'Vendor Advisory', 'Mitigation']);
+
+/** Keeps at most MAX_REFERENCES references, remediation-tagged ones first, original order otherwise. */
+function selectReferences(raw) {
+  const valid = asObjects(raw)
+    .filter((reference) => isHttpUrl(reference.url))
+    .map((reference) => ({
+      url: reference.url,
+      tags: asArray(reference.tags).map((tag) => asString(tag).slice(0, 60)).slice(0, 10),
+    }));
+  const rank = (reference) => (reference.tags.some((tag) => REMEDIATION_TAGS.has(tag)) ? 0 : 1);
+  const ordered = valid.map((reference, index) => ({ reference, index }))
+    .sort((a, b) => rank(a.reference) - rank(b.reference) || a.index - b.index)
+    .map((entry) => entry.reference);
+  return { references: ordered.slice(0, MAX_REFERENCES), referenceCount: valid.length };
+}
+
 export function normalizeCve(wrapper) {
   const cve = wrapper?.cve;
   const id = asString(cve?.id);
@@ -129,13 +147,7 @@ export function normalizeCve(wrapper) {
     cvss4: pickCvss(metrics.cvssMetricV40, '4.0'),
     cwes: extractCwes(weaknesses),
     products: extractProducts(cve),
-    references: asArray(cve.references)
-      .filter((reference) => isHttpUrl(reference?.url))
-      .slice(0, 12)
-      .map((reference) => ({
-        url: reference.url,
-        tags: asArray(reference.tags).map((tag) => asString(tag).slice(0, 60)).slice(0, 10),
-      })),
+    ...selectReferences(cve.references),
   };
 }
 

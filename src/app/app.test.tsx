@@ -169,6 +169,39 @@ describe('settings', () => {
   });
 });
 
+describe('slow storage', () => {
+  it('renders with defaults after the timeout and never overwrites stored preferences', async () => {
+    const user = userEvent.setup();
+    await db.kv.put({ key: 'preferences', value: { language: 'en', theme: 'light', density: 'compact', motion: 'system' }, updatedAt: 'x' });
+    const realLoad = storage.loadPreferences;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.spyOn(storage, 'loadPreferences').mockImplementation(async (fallback) => {
+      await gate;
+      return realLoad(fallback);
+    });
+    const save = vi.spyOn(storage, 'savePreferences');
+
+    renderApp();
+    // Interface appears with defaults once the timeout elapses.
+    expect(await screen.findByRole('heading', { level: 1, name: en['overview.title'] }, { timeout: 5000 })).toBeInTheDocument();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+
+    // A change made before the stored record arrives is not written yet.
+    await user.click(screen.getByRole('button', { name: en['lang.fr'] }));
+    expect(save).not.toHaveBeenCalled();
+
+    release();
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'));
+    expect(document.documentElement.lang).toBe('fr');
+    await waitFor(async () => {
+      expect((await db.kv.get('preferences'))?.value).toEqual({ language: 'fr', theme: 'light', density: 'compact', motion: 'system' });
+    });
+  }, 10_000);
+});
+
 describe('failure handling', () => {
   it('keeps working in memory and warns when storage is unavailable', async () => {
     vi.spyOn(storage, 'loadPreferences').mockResolvedValue({

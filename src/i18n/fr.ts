@@ -237,6 +237,8 @@ export const fr: Record<MessageKey, string> = {
   'vuln.detail.modified': 'Dernière modification',
   'vuln.detail.noNvdRecord': 'Aucune fiche NVD n’est disponible dans le jeu de données ; la description provient du catalogue KEV.',
   'vuln.detail.references': 'Références',
+  'vuln.detail.referencesPartial':
+    '{shown} références sur {total} sont affichées, en priorité celles étiquetées correctif, avis ou atténuation. La fiche NVD les liste toutes.',
   'vuln.detail.noReferences': 'Aucune référence n’est publiée dans le jeu de données.',
   'vuln.detail.weaknesses': 'Faiblesses (CWE)',
   'vuln.detail.noWeaknesses': 'Aucune CWE n’est attribuée dans le jeu de données.',
