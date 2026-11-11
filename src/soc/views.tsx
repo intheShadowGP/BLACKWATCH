@@ -107,6 +107,7 @@ export function TimeSettingsPanel() {
           </select>
         </div>
         <SelectField
+          disabled={soc.fromSaved}
           label={t('soc.time.offset')}
           value={String(soc.settings.offsetMinutes)}
           onChange={(value) => soc.setSettings({ ...soc.settings, offsetMinutes: Number(value) })}
@@ -139,6 +140,7 @@ export function FilesPanel() {
             {file.status === 'binary' ? <p className="mt-1 text-gold">{t(`soc.files.status.binary.${file.binary}` as MessageKey)}</p> : null}
             {file.status === 'tooLarge' ? <p className="mt-1 text-gold">{t('soc.files.status.tooLarge', { max: formatBytes(MAX_FILE_BYTES, language) })}</p> : null}
             {file.status === 'empty' ? <p className="mt-1 text-gold">{t('soc.files.status.empty')}</p> : null}
+            {file.status === 'notReadLimit' ? <p className="mt-1 text-gold">{t('soc.files.status.notReadLimit')}</p> : null}
             {file.status === 'unknownFormat' ? <p className="mt-1 text-gold">{t('soc.files.status.unknownFormat')}</p> : null}
             {(file.status === 'parsed' || file.status === 'unknownFormat') && !soc.fromSaved ? (
               <SelectField
@@ -205,8 +207,11 @@ function findingDetail(t: (key: MessageKey, params?: Record<string, string | num
 export function FindingsView({ onShowEvents }: { onShowEvents: (ids: number[]) => void }) {
   const { t } = useI18n();
   const { result } = useSoc();
+  const [page, setPage] = useState(1);
   if (!result) return null;
-  const { findings, excludedWithoutTime } = result.detections;
+  const { excludedWithoutTime } = result.detections;
+  const all = result.detections.findings;
+  const { slice: findings, pageCount, page: current } = paginate(all, page, 25);
   return (
     <div className="space-y-4">
       {Object.entries(excludedWithoutTime).map(([rule, count]) => (
@@ -245,6 +250,7 @@ export function FindingsView({ onShowEvents }: { onShowEvents: (ids: number[]) =
           })}
         </ul>
       )}
+      <Pagination page={current} pageCount={pageCount} onChange={setPage} />
       <details className="rounded-sm border border-line p-3 text-sm">
         <summary className="cursor-pointer text-muted">{t('soc.findings.coverage')}</summary>
         <ul className="mt-2 space-y-2">
@@ -377,8 +383,13 @@ export function TimelineView({ onShowEvents }: { onShowEvents: (ids: number[]) =
   const data = useMemo(() => {
     const times = (result?.events ?? []).map((event) => event.timestamp).filter((time): time is number => time !== null);
     if (times.length === 0) return null;
-    const min = Math.min(...times);
-    const max = Math.max(...times);
+    // Loops rather than Math.min(...times): spreading hundreds of thousands of arguments throws.
+    let min = times[0] as number;
+    let max = min;
+    for (const time of times) {
+      if (time < min) min = time;
+      if (time > max) max = time;
+    }
     const [size, label] = BUCKETS.find(([bucket]) => (max - min) / bucket <= 120) ?? (BUCKETS[BUCKETS.length - 1] as [number, string]);
     const start = Math.floor(min / size) * size;
     const counts = new Array<number>(Math.floor((max - start) / size) + 1).fill(0);
@@ -387,7 +398,7 @@ export function TimelineView({ onShowEvents }: { onShowEvents: (ids: number[]) =
   }, [result]);
   if (!result) return null;
   if (!data) return <EmptyState>{t('soc.timeline.noTime')}</EmptyState>;
-  const peak = Math.max(...data.counts, 1);
+  const peak = data.counts.reduce((highest, count) => (count > highest ? count : highest), 1);
   const findings = [...result.detections.findings].filter((finding) => finding.first !== null).sort((a, b) => (a.first as number) - (b.first as number));
   return (
     <div className="space-y-4">
@@ -542,6 +553,9 @@ export function SigmaView({ onShowEvents }: { onShowEvents: (ids: number[]) => v
               ) : (
                 <p className="mt-1 text-accent">{t('soc.sigma.status.invalid', { reason: outcome.reason })}</p>
               )}
+              {(outcome.status === 'matched' || outcome.status === 'noMatch') && outcome.missingFields.length > 0 ? (
+                <p className="mt-1 text-gold">{t('soc.sigma.status.missingFields', { fields: outcome.missingFields.join(', ') })}</p>
+              ) : null}
             </li>
           ))}
         </ul>

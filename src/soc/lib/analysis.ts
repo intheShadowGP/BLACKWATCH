@@ -10,10 +10,11 @@ export interface InputFile {
   name: string;
   size: number;
   lastModified: number;
-  bytes: Uint8Array | null;
+  /** Bytes, or a loader called only when the file is reached (files are read one at a time). */
+  bytes: Uint8Array | null | (() => Promise<Uint8Array>);
 }
 
-export type FileStatus = 'parsed' | 'tooLarge' | 'binary' | 'unknownFormat' | 'empty';
+export type FileStatus = 'parsed' | 'tooLarge' | 'binary' | 'unknownFormat' | 'empty' | 'notReadLimit';
 
 export interface FileReport {
   index: number;
@@ -47,11 +48,15 @@ export async function analyzeInputs(inputs: readonly InputFile[], settings: Time
   let truncated = false;
   for (const [index, input] of inputs.entries()) {
     const base = { index, name: input.name.slice(0, 255), size: input.size, sha256: null, binary: null, detectedFormat: null, format: null, stats: null };
+    if (events.length >= MAX_EVENTS) {
+      files.push({ ...base, status: 'notReadLimit' });
+      continue;
+    }
     if (input.size > MAX_FILE_BYTES || input.bytes === null) {
       files.push({ ...base, status: 'tooLarge' });
       continue;
     }
-    const bytes = input.bytes;
+    const bytes = typeof input.bytes === 'function' ? await input.bytes() : input.bytes;
     const digest = await sha256(bytes);
     if (bytes.length === 0) {
       files.push({ ...base, sha256: digest, status: 'empty' });
@@ -71,13 +76,14 @@ export async function analyzeInputs(inputs: readonly InputFile[], settings: Time
     }
     const remaining = MAX_EVENTS - events.length;
     const parsed = parseText(text, format, settings);
-    const accepted = parsed.events.slice(0, Math.max(remaining, 0));
-    if (accepted.length < parsed.events.length) {
+    if (parsed.events.length > remaining) {
       truncated = true;
       parsed.stats.truncated = true;
     }
     if (parsed.stats.truncated) truncated = true;
-    for (const event of accepted) events.push({ ...event, id: events.length, file: index });
+    for (let position = 0; position < Math.min(parsed.events.length, remaining); position += 1) {
+      events.push({ ...(parsed.events[position] as Omit<LogEvent, 'id' | 'file'>), id: events.length, file: index });
+    }
     files.push({ ...base, sha256: digest, status: 'parsed', detectedFormat: detected, format, stats: parsed.stats });
   }
   return { files, events, detections: runDetections(events), settings, truncated, analysedAt: new Date().toISOString() };

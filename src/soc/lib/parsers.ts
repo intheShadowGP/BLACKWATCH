@@ -407,7 +407,9 @@ function recordToEvent(fields: Record<string, string>, line: number, format: Log
     user: classified?.user ?? pick(fields, USER_FIELDS),
     srcIp: classified?.srcIp ?? pick(fields, IP_FIELDS),
     count: classified?.count ?? 1,
-    fields,
+    // Classification details (service, method, sudo target and command) are kept alongside the
+    // source fields so that rules behave the same on journald JSON as on syslog text.
+    fields: { ...fields, ...(classified?.detail ?? {}) },
   });
 }
 

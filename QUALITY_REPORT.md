@@ -10,10 +10,10 @@ Only checks that were actually executed are reported as passed. All runs below w
 | --- | --- | --- |
 | Lint | `npm run lint` | Passed, 0 findings |
 | Type check | `npm run typecheck` | Passed (strict, `noUncheckedIndexedAccess`) |
-| Unit, integration and pipeline tests | `npm test` | Passed, 525 tests in 20 files |
+| Unit, integration and pipeline tests | `npm test` | Passed, 533 tests in 21 files |
 | Data pipeline against live sources | `npm run data:build` | 5/5 datasets fresh (KEV 1,779; NVD recent 4,694; NVD KEV 1,779; ATT&CK v20.1, 706 techniques; CERT-FR 80) |
 | Production build | `npm run build` | Passed (main bundle 551 kB, 174 kB gzip; the increase is the toolbox translations, which load with the shell) |
-| Repository identity check | `npm run check:identity` | Passed, 133 files plus build output |
+| Repository identity check | `npm run check:identity` | Passed, 134 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
 | End-to-end tests | `npm run test:e2e` | 54 tests (27 scenarios × desktop and mobile Chromium), fixture data: three consecutive full runs passed 54/54 |
 
@@ -46,6 +46,10 @@ on 40 "a" followed by "!" was stopped after 2 seconds and reported, with the pag
 - SOC Workbench limits measured on the production build (DECISIONS.md D-031): 97 MB / 560,000 lines
   analysed in 3.1 s (capped at 500,000 events), search over 500,000 events in under 0.1 s; saving
   100,000 events 0.4 s, Settings export of 105 MB 0.5 s, deletion 0.1 s.
+- Attack-shaped loads on the production build: 303,000 SSH lines from one address (8,002
+  findings) analysed in 1.7 s, timeline in 0.8 s; 300,000 malicious requests from one address in
+  2.2 s. Before the detections were made linear, spreading all timestamps into Math.min would
+  have thrown on such inputs; a unit test now covers both shapes.
 
 - File hashing on the production build: a 496 MB random file was hashed with all five algorithms
   in a worker in 9.3 s (Chromium, development machine), matching the SHA-256 computed by Node.

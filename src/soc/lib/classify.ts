@@ -20,6 +20,12 @@ export interface Classification {
 }
 
 const IP = '([0-9a-fA-F:.]+)';
+/**
+ * End of an sshd line after the port. The user name is matched greedily and the
+ * line is anchored at its end, so a login name containing " from <ip> port <n>"
+ * cannot forge the source address: the real address is always the last one.
+ */
+const TAIL = '(?: ssh2)?(?:: .*)?$';
 
 export function classifyAuthMessage(program: string | null, rawMessage: string): Classification {
   let message = rawMessage;
@@ -34,13 +40,13 @@ export function classifyAuthMessage(program: string | null, rawMessage: string):
   let match: RegExpExecArray | null;
 
   if (name === 'sshd' || name.startsWith('sshd')) {
-    if ((match = new RegExp(`^Failed (\\S+) for (invalid user )?(.*?) from ${IP} port \\d+`).exec(message))) {
+    if ((match = new RegExp(`^Failed (\\S+) for (invalid user )?(.*) from ${IP} port \\d+${TAIL}`).exec(message))) {
       return base('authFailure', match[3] as string, match[4] as string, { method: match[1] as string, invalidUser: match[2] ? 'true' : 'false', service: 'ssh' });
     }
-    if ((match = new RegExp(`^Accepted (\\S+) for (.*?) from ${IP} port \\d+`).exec(message))) {
+    if ((match = new RegExp(`^Accepted (\\S+) for (.*) from ${IP} port \\d+${TAIL}`).exec(message))) {
       return base('authSuccess', match[2] as string, match[3] as string, { method: match[1] as string, service: 'ssh' });
     }
-    if ((match = new RegExp(`^Invalid user (.*?) from ${IP}(?: port \\d+)?`).exec(message))) {
+    if ((match = new RegExp(`^Invalid user (.*) from ${IP}(?: port \\d+)?$`).exec(message))) {
       return base('authInvalidUser', match[1] as string, match[2] as string, { service: 'ssh' });
     }
     if ((match = new RegExp(`rhost=${IP}(?:\\s+user=(\\S+))?`).exec(message))) {

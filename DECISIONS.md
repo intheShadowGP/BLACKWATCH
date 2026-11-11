@@ -223,6 +223,14 @@ IndexedDB took 0.4 s and the Settings export of the resulting 105 MB took 0.5 s;
 save did not complete within 5 minutes. Limits are therefore 100 MB per file, 50 files, 500,000
 events per analysis and 100,000 events per saved investigation.
 
+That first benchmark produced no finding, so attack-shaped files were measured as well, after
+making every rule linear in the number of events: 303,000 SSH lines from one address with 5,000
+rotating accounts and 3,000 successful logins (8,002 findings) were analysed in 1.7 s and the
+timeline drawn in 0.8 s; 300,000 traversal requests from one address (3 findings, one with
+300,000 events) were analysed in 2.2 s. Files are read one at a time and files after the event cap
+are not read. Success-after-failure findings list at most 200 prior failures per source; their
+count is complete.
+
 ## D-032 — Reports in Markdown, never HTML
 
 Log content is attacker-controlled and a downloaded HTML file would open without the site's CSP.

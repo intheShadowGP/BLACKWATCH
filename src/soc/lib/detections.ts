@@ -81,13 +81,18 @@ export function windowBursts(events: readonly LogEvent[], windowMs: number, thre
   const marked = new Array<boolean>(sorted.length).fill(false);
   let start = 0;
   let sum = 0;
+  let markedTo = 0;
   for (let end = 0; end < sorted.length; end += 1) {
     sum += weight(sorted[end] as LogEvent);
     while ((sorted[end] as LogEvent).timestamp as number - ((sorted[start] as LogEvent).timestamp as number) > windowMs) {
       sum -= weight(sorted[start] as LogEvent);
       start += 1;
     }
-    if (sum >= threshold) for (let index = start; index <= end; index += 1) marked[index] = true;
+    // Indices before markedTo are already marked: each index is marked once (linear time).
+    if (sum >= threshold) {
+      for (let index = Math.max(start, markedTo); index <= end; index += 1) marked[index] = true;
+      markedTo = end + 1;
+    }
   }
   const bursts: LogEvent[][] = [];
   let current: LogEvent[] = [];
@@ -118,17 +123,27 @@ function groupBy(events: readonly LogEvent[], key: (event: LogEvent) => string |
 
 const sumCounts = (events: readonly LogEvent[]) => events.reduce((total, event) => total + event.count, 0);
 
-function finding(rule: RuleDefinition, entity: Finding['entity'], events: readonly LogEvent[], detail: Record<string, string | number> = {}): Finding {
-  const times = events.map((event) => event.timestamp).filter((time): time is number => time !== null);
+/** Minimum and maximum without spreading arrays into arguments (which fails on large inputs). */
+export function timeRange(events: readonly LogEvent[]): { first: number | null; last: number | null } {
+  let first: number | null = null;
+  let last: number | null = null;
+  for (const event of events) {
+    if (event.timestamp === null) continue;
+    if (first === null || event.timestamp < first) first = event.timestamp;
+    if (last === null || event.timestamp > last) last = event.timestamp;
+  }
+  return { first, last };
+}
+
+function finding(rule: RuleDefinition, entity: Finding['entity'], events: readonly LogEvent[], detail: Record<string, string | number> = {}, count = sumCounts(events)): Finding {
   return {
     key: `${rule.id}|${entity.kind}|${entity.value}|${events[0]?.id ?? 0}`,
     rule: rule.id,
     severity: rule.severity,
     entity,
     eventIds: events.map((event) => event.id),
-    count: sumCounts(events),
-    first: times.length > 0 ? Math.min(...times) : null,
-    last: times.length > 0 ? Math.max(...times) : null,
+    count,
+    ...timeRange(events),
     detail,
   };
 }
@@ -202,18 +217,29 @@ export function runDetections(events: readonly LogEvent[]): DetectionResult {
     const window = (definition.params.windowMinutes as number) * MINUTE;
     const minimum = definition.params.distinctUsers as number;
     for (const [ip, list] of groupBy(timed(failures.filter((event) => event.srcIp && event.user), definition.id), (event) => event.srcIp)) {
+      // Sliding window with a running count per account: linear in the number of events.
       const sorted = [...list].sort((a, b) => (a.timestamp as number) - (b.timestamp as number));
-      const contributing = new Set<LogEvent>();
+      const marked = new Array<boolean>(sorted.length).fill(false);
+      const perUser = new Map<string, number>();
       let start = 0;
+      let markedTo = 0;
       for (let end = 0; end < sorted.length; end += 1) {
-        while ((sorted[end] as LogEvent).timestamp as number - ((sorted[start] as LogEvent).timestamp as number) > window) start += 1;
-        const slice = sorted.slice(start, end + 1);
-        if (new Set(slice.map((event) => event.user)).size >= minimum) slice.forEach((event) => contributing.add(event));
+        const user = (sorted[end] as LogEvent).user as string;
+        perUser.set(user, (perUser.get(user) ?? 0) + 1);
+        while (((sorted[end] as LogEvent).timestamp as number) - ((sorted[start] as LogEvent).timestamp as number) > window) {
+          const leaving = (sorted[start] as LogEvent).user as string;
+          const remaining = (perUser.get(leaving) ?? 1) - 1;
+          if (remaining === 0) perUser.delete(leaving);
+          else perUser.set(leaving, remaining);
+          start += 1;
+        }
+        if (perUser.size >= minimum) {
+          for (let index = Math.max(start, markedTo); index <= end; index += 1) marked[index] = true;
+          markedTo = end + 1;
+        }
       }
-      if (contributing.size > 0) {
-        const burst = sorted.filter((event) => contributing.has(event));
-        findings.push(finding(definition, { kind: 'ip', value: ip }, burst, { users: new Set(burst.map((event) => event.user)).size }));
-      }
+      const burst = sorted.filter((_, index) => marked[index]);
+      if (burst.length > 0) findings.push(finding(definition, { kind: 'ip', value: ip }, burst, { users: new Set(burst.map((event) => event.user)).size }));
     }
   }
 
@@ -233,17 +259,61 @@ export function runDetections(events: readonly LogEvent[]): DetectionResult {
     const definition = rule('successAfterFailures');
     const window = (definition.params.windowMinutes as number) * MINUTE;
     const minimum = definition.params.failures as number;
-    const timedFailures = timed(failures, definition.id);
+    // Failures indexed by source and by account, sorted by time, with prefix sums of counts:
+    // each success is resolved with two binary searches instead of a scan of all failures.
+    const index = (key: (event: LogEvent) => string | null) => {
+      const groups = groupBy(timed(failures, definition.id), key);
+      const indexed = new Map<string, { events: LogEvent[]; prefix: number[] }>();
+      for (const [name, list] of groups) {
+        const events = [...list].sort((a, b) => (a.timestamp as number) - (b.timestamp as number));
+        const prefix = [0];
+        for (const event of events) prefix.push((prefix[prefix.length - 1] as number) + event.count);
+        indexed.set(name, { events, prefix });
+      }
+      return indexed;
+    };
+    const byIp = index((event) => event.srcIp);
+    const byUser = index((event) => event.user?.toLowerCase() ?? null);
+    const lowerBound = (events: LogEvent[], time: number) => {
+      let low = 0;
+      let high = events.length;
+      while (low < high) {
+        const middle = (low + high) >> 1;
+        if (((events[middle] as LogEvent).timestamp as number) < time) low = middle + 1;
+        else high = middle;
+      }
+      return low;
+    };
+    const upperBound = (events: LogEvent[], time: number) => {
+      let low = 0;
+      let high = events.length;
+      while (low < high) {
+        const middle = (low + high) >> 1;
+        if (((events[middle] as LogEvent).timestamp as number) <= time) low = middle + 1;
+        else high = middle;
+      }
+      return low;
+    };
+    const MAX_LISTED = 200;
     for (const success of timed(successes, definition.id)) {
       const time = success.timestamp as number;
-      const prior = timedFailures.filter(
-        (event) =>
-          (event.timestamp as number) <= time &&
-          time - (event.timestamp as number) <= window &&
-          ((success.srcIp !== null && event.srcIp === success.srcIp) || (success.user !== null && event.user?.toLowerCase() === success.user.toLowerCase())),
-      );
-      if (sumCounts(prior) >= minimum) {
-        findings.push(finding(definition, success.srcIp ? { kind: 'ip', value: success.srcIp } : { kind: 'user', value: success.user as string }, [...prior, success], { user: success.user ?? '?', failures: sumCounts(prior) }));
+      const prior = new Map<number, LogEvent>();
+      let total = 0;
+      const sources = [success.srcIp !== null ? byIp.get(success.srcIp) : undefined, success.user !== null ? byUser.get(success.user.toLowerCase()) : undefined];
+      for (const source of sources) {
+        if (!source) continue;
+        const from = lowerBound(source.events, time - window);
+        const to = upperBound(source.events, time);
+        for (let position = Math.max(from, to - MAX_LISTED); position < to; position += 1) {
+          const event = source.events[position] as LogEvent;
+          prior.set(event.id, event);
+        }
+        total = Math.max(total, (source.prefix[to] as number) - (source.prefix[from] as number));
+      }
+      // Failures matching both the address and the account are counted once: the larger of the two sums is used.
+      if (total >= minimum) {
+        const listed = [...prior.values()].sort((a, b) => (a.timestamp as number) - (b.timestamp as number));
+        findings.push(finding(definition, success.srcIp ? { kind: 'ip', value: success.srcIp } : { kind: 'user', value: success.user as string }, [...listed, success], { user: success.user ?? '?', failures: total }, total + success.count));
       }
     }
   }

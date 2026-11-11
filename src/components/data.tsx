@@ -231,14 +231,14 @@ export function TextField({ label, value, onChange, placeholder, type = 'search'
   );
 }
 
-export function SelectField<T extends string>({ label, value, options, onChange, className = '' }: { label: string; value: T; options: readonly { value: T; label: string }[]; onChange: (value: T) => void; className?: string }) {
+export function SelectField<T extends string>({ label, value, options, onChange, className = '', disabled = false }: { label: string; value: T; options: readonly { value: T; label: string }[]; onChange: (value: T) => void; className?: string; disabled?: boolean }) {
   const id = useId();
   return (
     <div className={className}>
       <label htmlFor={id} className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
         {label}
       </label>
-      <select id={id} value={value} onChange={(event) => onChange(event.target.value as T)} className={FIELD}>
+      <select id={id} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value as T)} className={`${FIELD} disabled:opacity-50`}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

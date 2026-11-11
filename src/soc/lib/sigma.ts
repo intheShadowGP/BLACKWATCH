@@ -20,8 +20,8 @@
 import type { LogEvent } from './model';
 
 export type SigmaOutcome =
-  | { status: 'matched'; title: string; level: string | null; eventIds: number[]; candidates: number }
-  | { status: 'noMatch'; title: string; level: string | null; candidates: number }
+  | { status: 'matched'; title: string; level: string | null; eventIds: number[]; candidates: number; missingFields: string[] }
+  | { status: 'noMatch'; title: string; level: string | null; candidates: number; missingFields: string[] }
   | { status: 'notApplicable'; title: string; reason: 'noLogsource' | 'noFields'; detail: string }
   | { status: 'unsupported'; title: string; reason: string }
   | { status: 'invalid'; reason: string };
@@ -277,7 +277,7 @@ export async function evaluateSigma(source: string, events: readonly LogEvent[])
         continue;
       }
       const matched = candidates.filter(matcher).map((event) => event.id);
-      outcomes.push(matched.length > 0 ? { status: 'matched', title, level, eventIds: matched, candidates: candidates.length } : { status: 'noMatch', title, level, candidates: candidates.length });
+      outcomes.push(matched.length > 0 ? { status: 'matched', title, level, eventIds: matched, candidates: candidates.length, missingFields: missing } : { status: 'noMatch', title, level, candidates: candidates.length, missingFields: missing });
     } catch (error) {
       if (error instanceof Unsupported) outcomes.push({ status: 'unsupported', title, reason: error.message });
       else throw error;
