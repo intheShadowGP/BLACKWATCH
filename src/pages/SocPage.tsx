@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../app/preferences-context';
 import { EmptyState, Tabs } from '../components/data';
 import { PageHeader } from '../components/ui';
@@ -13,11 +13,19 @@ export default function SocPage() {
   const soc = useSoc();
   const [tab, setTab] = useState<TabId>('findings');
   const [focus, setFocus] = useState<number[] | null>(null);
+  const moveFocus = useRef(false);
   const showEvents = (ids: number[]) => {
     setFocus(ids);
     setTab('events');
+    moveFocus.current = true;
   };
   const panelId = 'soc-panel';
+  // The control that opened the events disappears with its tab: move keyboard focus to the Events tab.
+  useEffect(() => {
+    if (!moveFocus.current || tab !== 'events') return;
+    moveFocus.current = false;
+    document.getElementById(`${panelId}-tab-events`)?.focus();
+  }, [tab, focus]);
   const counts: Partial<Record<TabId, number>> = soc.result ? { findings: soc.result.detections.findings.length, events: soc.result.events.length } : {};
 
   return (

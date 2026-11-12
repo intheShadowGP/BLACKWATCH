@@ -51,13 +51,14 @@ function LanguageSwitch() {
           type="button"
           lang={language}
           aria-pressed={preferences.language === language}
-          aria-label={t(`lang.${language}`)}
           onClick={() => update({ language })}
           className={`min-h-8 border-r border-line-strong px-2.5 text-xs font-semibold uppercase tracking-wider last:border-r-0 ${
             preferences.language === language ? 'bg-raised text-fg' : 'text-muted hover:text-fg'
           }`}
         >
           {language}
+          {/* The accessible name starts with the visible code (WCAG 2.5.3). */}
+          <span className="sr-only"> {t(`lang.${language}`)}</span>
         </button>
       ))}
     </div>

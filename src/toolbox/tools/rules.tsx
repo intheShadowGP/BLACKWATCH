@@ -110,7 +110,7 @@ export function SigmaTool() {
                     {rule.detection.map((block) => (
                       <div key={block.name}>
                         <p className="font-mono text-xs text-accent">{block.name}</p>
-                        <pre className="overflow-auto whitespace-pre-wrap break-all rounded-sm border border-line bg-bg p-2 font-mono text-xs text-fg">{block.body}</pre>
+                        <pre tabIndex={0} className="overflow-auto whitespace-pre-wrap break-all rounded-sm border border-line bg-bg p-2 font-mono text-xs text-fg">{block.body}</pre>
                       </div>
                     ))}
                   </div>

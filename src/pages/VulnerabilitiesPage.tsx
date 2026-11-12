@@ -8,6 +8,7 @@ import {
   PriorityBadge,
   SelectField,
   SeverityBadge,
+  TableScroll,
   SourceNote,
   Tabs,
   Tag,
@@ -158,7 +159,7 @@ export default function VulnerabilitiesPage() {
             {filtered.length === 0 ? (
               <EmptyState>{tab === 'watchlist' && source.length === 0 ? t('vuln.watchlist.empty') : t('common.noResults')}</EmptyState>
             ) : (
-              <div className="overflow-x-auto rounded-sm border border-line">
+              <TableScroll label={t('common.resultsTable')} className="rounded-sm border border-line">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-surface text-xs uppercase tracking-wider text-subtle">
                     <tr>
@@ -197,7 +198,7 @@ export default function VulnerabilitiesPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             )}
             <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
 

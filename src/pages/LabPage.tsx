@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useI18n } from '../app/preferences-context';
 import { ExternalLink, Tag } from '../components/data';
@@ -67,7 +67,13 @@ export function LabIndexPage() {
 function StepView({ step, index, total, answer, onSubmit, scenario }: { step: Step; index: number; total: number; answer: string[] | undefined; onSubmit: (selected: string[]) => void; scenario: Scenario }) {
   const { t, language } = useI18n();
   const [selected, setSelected] = useState<string[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+  const resultRef = useRef<HTMLParagraphElement>(null);
   const locked = answer !== undefined;
+  // The submit button disappears once the answer locks: move keyboard focus to the result.
+  useEffect(() => {
+    if (locked && submitted) resultRef.current?.focus();
+  }, [locked, submitted]);
   const chosen = answer ?? selected;
   const best = bestAnswer(step);
   const evidenceTitles = step.evidence.map((id) => scenario.evidence.find((item) => item.id === id)?.title[language]).filter(Boolean).join(', ');
@@ -104,7 +110,7 @@ function StepView({ step, index, total, answer, onSubmit, scenario }: { step: St
       </fieldset>
       {locked ? (
         <div className="mt-3 space-y-1 text-sm">
-          <p className="font-medium text-gold">{t('lab.points', { points: scoreStep(step, chosen), max: step.points })}</p>
+          <p ref={resultRef} tabIndex={-1} className="font-medium text-gold focus:outline-none">{t('lab.points', { points: scoreStep(step, chosen), max: step.points })}</p>
           <p className="text-xs text-subtle">{t('lab.locked')}</p>
           <p className="text-xs text-subtle">
             {t('lab.references')}:{' '}
@@ -117,7 +123,10 @@ function StepView({ step, index, total, answer, onSubmit, scenario }: { step: St
           </p>
         </div>
       ) : (
-        <Button variant="danger" className="mt-3" disabled={selected.length === 0} onClick={() => onSubmit(selected)}>
+        <Button variant="danger" className="mt-3" disabled={selected.length === 0} onClick={() => {
+          setSubmitted(true);
+          onSubmit(selected);
+        }}>
           {t('lab.submit')}
         </Button>
       )}
@@ -226,7 +235,7 @@ export function LabScenarioPage() {
                   <summary className="cursor-pointer px-3 py-2 text-sm text-fg">
                     {item.title[language]} <span className="text-xs text-subtle">· {t('lab.evidenceSynthetic')}</span>
                   </summary>
-                  <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-all border-t border-line bg-bg p-2.5 font-mono text-xs text-muted">{item.content}</pre>
+                  <pre tabIndex={0} className="max-h-96 overflow-auto whitespace-pre-wrap break-all border-t border-line bg-bg p-2.5 font-mono text-xs text-muted">{item.content}</pre>
                 </details>
               ))}
             </div>

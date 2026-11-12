@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { MODULES } from '../app/modules';
 import { useI18n, usePreferences } from '../app/preferences-context';
-import { BarChart, DatasetState, ExternalLink, FreshnessTag, SeverityBadge, Tag } from '../components/data';
+import { BarChart, DatasetState, ExternalLink, FreshnessTag, SeverityBadge, TableScroll, Tag } from '../components/data';
 import { Icon } from '../components/Icon';
 import { PageHeader, Panel, StatusBadge } from '../components/ui';
 import { freshness } from '../data/loader';
@@ -238,7 +238,7 @@ export default function OverviewPage() {
         <Panel title={t('overview.data.title')} className="lg:col-span-2">
           {manifest.status === 'ready' ? (
             <>
-              <div className="overflow-x-auto">
+              <TableScroll label={t('overview.data.title')}>
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-line text-xs uppercase tracking-wider text-subtle">
@@ -269,7 +269,7 @@ export default function OverviewPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
               <p className="mt-3 text-xs text-subtle">{t('overview.data.note')}</p>
               {attackEntry?.version ? (
                 <p className="mt-2 text-xs text-subtle">

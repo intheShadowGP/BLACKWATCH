@@ -107,7 +107,7 @@ describe('internationalisation', () => {
   it('switches language from the header and persists the choice', async () => {
     const user = userEvent.setup();
     const first = renderApp();
-    await user.click(await screen.findByRole('button', { name: en['lang.fr'] }));
+    await user.click(await screen.findByRole('button', { name: new RegExp(en['lang.fr']) }));
     expect(await screen.findByRole('heading', { level: 1, name: fr['overview.title'] })).toBeInTheDocument();
     expect(document.documentElement.lang).toBe('fr');
     await waitFor(async () => {
@@ -190,7 +190,7 @@ describe('slow storage', () => {
     expect(document.documentElement.dataset.theme).toBe('dark');
 
     // A change made before the stored record arrives is not written yet.
-    await user.click(screen.getByRole('button', { name: en['lang.fr'] }));
+    await user.click(screen.getByRole('button', { name: new RegExp(en['lang.fr']) }));
     expect(save).not.toHaveBeenCalled();
 
     release();

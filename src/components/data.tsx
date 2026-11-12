@@ -289,3 +289,15 @@ export function BarChart({ data, caption }: { data: readonly BarDatum[]; caption
 export function EmptyState({ children }: { children: ReactNode }) {
   return <p className="rounded-sm border border-dashed border-line-strong px-4 py-8 text-center text-sm text-muted">{children}</p>;
 }
+
+/**
+ * Horizontal scroll container for wide tables. It is focusable so keyboard users can scroll it
+ * (WCAG 2.1.1) and named so screen readers announce what the focused region holds.
+ */
+export function TableScroll({ label, className = '', children }: { label: string; className?: string; children: ReactNode }) {
+  return (
+    <div role="region" aria-label={label} tabIndex={0} className={`overflow-x-auto ${className}`}>
+      {children}
+    </div>
+  );
+}

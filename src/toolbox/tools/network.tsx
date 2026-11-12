@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useI18n } from '../../app/preferences-context';
-import { EmptyState, SelectField } from '../../components/data';
+import { EmptyState, SelectField, TableScroll } from '../../components/data';
 import type { MessageKey } from '../../i18n';
 import { formatDate, formatNumber } from '../../lib/format';
 import { ipv4Info, ipv4Subnet, ipv6Info, splitSubnet } from '../lib/net';
@@ -163,7 +163,7 @@ export function PortsTool() {
       ) : (
         <>
           <p className="text-xs text-subtle">{t('tb.ports.count', { n: matches.length })}</p>
-          <div className="overflow-x-auto rounded-sm border border-line">
+          <TableScroll label={t('common.resultsTable')} className="rounded-sm border border-line">
             <table className="w-full text-left text-sm">
               <thead className="bg-surface text-xs uppercase tracking-wider text-subtle">
                 <tr>
@@ -184,7 +184,7 @@ export function PortsTool() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         </>
       )}
       <p className="text-xs text-subtle">{t('tb.ports.source', { registry: data.registry, date: formatDate(data.retrievedAt, language), licence: data.licence })}</p>

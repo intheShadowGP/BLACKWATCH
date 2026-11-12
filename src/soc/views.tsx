@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../app/preferences-context';
-import { EmptyState, Pagination, SelectField, Tag, TextField, paginate } from '../components/data';
+import { EmptyState, Pagination, SelectField, TableScroll, Tag, TextField, paginate } from '../components/data';
 import { ConfirmDialog } from '../components/Modal';
 import { Button, Panel } from '../components/ui';
 import type { MessageKey } from '../i18n';
@@ -174,7 +174,7 @@ export function FilesPanel() {
             {file.stats && file.stats.unparsedSamples.length > 0 ? (
               <details className="mt-2">
                 <summary className="cursor-pointer text-xs text-muted">{t('soc.files.unparsedSamples', { n: file.stats.unparsedSamples.length })}</summary>
-                <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-sm border border-line bg-bg p-2 font-mono text-xs text-muted">
+                <pre tabIndex={0} className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-sm border border-line bg-bg p-2 font-mono text-xs text-muted">
                   {file.stats.unparsedSamples.map((sample) => `${sample.line}: ${sample.text}`).join('\n')}
                 </pre>
               </details>
@@ -319,7 +319,7 @@ export function EventsView({ focus, onClearFocus }: { focus: number[] | null; on
       {filtered.length === 0 ? (
         <EmptyState>{t('common.noResults')}</EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-sm border border-line">
+        <TableScroll label={t('soc.tab.events')} className="rounded-sm border border-line">
           <table className="w-full text-left text-xs">
             <thead className="bg-surface uppercase tracking-wider text-subtle">
               <tr>
@@ -337,7 +337,7 @@ export function EventsView({ focus, onClearFocus }: { focus: number[] | null; on
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
       <Pagination page={current} pageCount={pageCount} onChange={setPage} />
     </div>
@@ -473,7 +473,7 @@ export function EntitiesView({ onShowEvents }: { onShowEvents: (ids: number[]) =
       {rows.length === 0 ? (
         <p className="text-sm text-muted">—</p>
       ) : (
-        <div className="overflow-x-auto">
+        <TableScroll label={title}>
           <table className="w-full text-left text-xs">
             <thead className="uppercase tracking-wider text-subtle">
               <tr>
@@ -498,7 +498,7 @@ export function EntitiesView({ onShowEvents }: { onShowEvents: (ids: number[]) =
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
     </Panel>
   );

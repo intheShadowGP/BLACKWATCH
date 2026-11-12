@@ -4,7 +4,7 @@ import type { MessageKey } from '../i18n';
 import { downloadText, fileStamp, toCsv } from '../lib/export';
 import { IOC_TYPES, MAX_IOC_INPUT_CHARS, defang, extractIocs, type ExtractionResult, type IocType } from '../lib/ioc';
 import { TLD_SNAPSHOT } from '../lib/tlds';
-import { EmptyState, Pagination, SelectField, paginate } from './data';
+import { EmptyState, Pagination, SelectField, TableScroll, paginate } from './data';
 import { Button, Panel } from './ui';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -121,7 +121,7 @@ export function IocExplorer() {
             {visible.length === 0 ? (
               <EmptyState>{t('intel.ioc.none')}</EmptyState>
             ) : (
-              <div className="overflow-x-auto rounded-sm border border-line">
+              <TableScroll label={t('common.resultsTable')} className="rounded-sm border border-line">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-surface text-xs uppercase tracking-wider text-subtle">
                     <tr>
@@ -144,7 +144,7 @@ export function IocExplorer() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             )}
             <Pagination page={current} pageCount={pageCount} onChange={setPage} />
             <p className="mt-3 text-xs text-subtle">{t('intel.ioc.defangNote')}</p>

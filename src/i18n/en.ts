@@ -146,6 +146,7 @@ export const en = {
   'common.exportJson': 'Export JSON',
   'common.print': 'Print page / PDF',
   'common.results': '{n} of {total} shown',
+  'common.resultsTable': 'Results table',
   'common.noResults': 'Nothing matches the current filters.',
   'common.showAll': 'Show all {n}',
   'common.showLess': 'Show fewer',

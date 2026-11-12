@@ -106,7 +106,7 @@ export function Output({ label, text, maxHeight = 'max-h-96' }: { label: string;
         <span className="text-xs font-medium uppercase tracking-wider text-subtle">{label}</span>
         <CopyButton text={text} />
       </div>
-      <pre className={`${maxHeight} overflow-auto whitespace-pre-wrap break-all rounded-sm border border-line bg-surface p-2.5 font-mono text-xs text-fg`}>
+      <pre tabIndex={0} className={`${maxHeight} overflow-auto whitespace-pre-wrap break-all rounded-sm border border-line bg-surface p-2.5 font-mono text-xs text-fg`}>
         {text}
       </pre>
     </div>

@@ -1,5 +1,5 @@
 import { useI18n } from '../../app/preferences-context';
-import { ExternalLink, Tag } from '../../components/data';
+import { ExternalLink, TableScroll, Tag } from '../../components/data';
 import { Panel } from '../../components/ui';
 import type { MessageKey } from '../../i18n';
 import { TLS_RULES, TLS_SUITES, TLS_VERSIONS, type Citation } from '../lib/reference';
@@ -23,7 +23,7 @@ export function TlsTool() {
   return (
     <div className="space-y-4">
       <Panel title={t('tb.tls.versions')}>
-        <div className="overflow-x-auto">
+        <TableScroll label={t('tb.tls.versions')}>
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-wider text-subtle">
               <tr>
@@ -44,7 +44,7 @@ export function TlsTool() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </Panel>
       <Panel title={t('tb.tls.suites')}>
         <ul className="divide-y divide-line text-sm">

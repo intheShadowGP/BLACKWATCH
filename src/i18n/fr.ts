@@ -149,6 +149,7 @@ export const fr: Record<MessageKey, string> = {
   'common.exportJson': 'Exporter en JSON',
   'common.print': 'Imprimer la page / PDF',
   'common.results': '{n} affichés sur {total}',
+  'common.resultsTable': 'Tableau des résultats',
   'common.noResults': 'Aucun élément ne correspond aux filtres.',
   'common.showAll': 'Afficher les {n}',
   'common.showLess': 'Réduire',

@@ -62,7 +62,7 @@ test('navigates between modules and to settings', async ({ page, isMobile }) => 
 
 test('language choice applies immediately and survives a reload', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'French' }).click();
+  await page.getByRole('button', { name: /French/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Vue d’ensemble' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
   await page.reload();

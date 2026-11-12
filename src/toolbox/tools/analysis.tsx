@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useI18n } from '../../app/preferences-context';
-import { ExternalLink, Tag } from '../../components/data';
+import { ExternalLink, TableScroll, Tag } from '../../components/data';
 import { IocExplorer } from '../../components/IocExplorer';
 import { Button } from '../../components/ui';
 import type { MessageKey } from '../../i18n';
@@ -114,7 +114,7 @@ export function UrlTool() {
             ]}
           />
           {parsed.params.length > 0 ? (
-            <div className="overflow-x-auto rounded-sm border border-line">
+            <TableScroll label={t('tb.url.params')} className="rounded-sm border border-line">
               <table className="w-full text-left text-sm">
                 <caption className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-subtle">{t('tb.url.params')}</caption>
                 <tbody className="divide-y divide-line">
@@ -126,7 +126,7 @@ export function UrlTool() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
           ) : null}
         </>
       )}
