@@ -65,7 +65,7 @@ in [QUALITY_REPORT.md](QUALITY_REPORT.md) pass, in CI on Chromium, Firefox and W
 ## Deployment
 
 - `deploy.yml` builds the datasets, verifies and publishes on push and daily; `ci.yml` runs lint,
-  types, unit and end-to-end tests on fixtures. Both ran successfully on GitHub for version 0.4.
+  types, unit and end-to-end tests on fixtures. Both succeeded on GitHub for 1.0.0 (commit 8f86b3f).
 - Remaining release step, the owner's decision: tag `v1.0.0` and publish a GitHub release.
 
 ## Known limitations
