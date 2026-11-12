@@ -3,9 +3,8 @@
 Last run: 2026-11-12 · Version 1.0.0 · Windows 11, Node.js 26.13, npm 11.20
 
 Only checks that were actually executed are reported as passed. Unless stated otherwise, the runs
-below were local. The GitHub Actions workflows ran successfully on GitHub for version 0.4 (CI and
-deployment); the 1.0 changes to them (Firefox and WebKit in CI, pinned actions, non-blocking ATT&CK
-check) have **not** run on GitHub yet.
+below were local. On GitHub, CI and the deployment of commit 8f86b3f both succeeded, with the
+end-to-end suite on desktop and mobile Chromium, Firefox and WebKit.
 
 ## Results
 
@@ -19,7 +18,7 @@ check) have **not** run on GitHub yet.
 | Repository identity check | `npm run check:identity` | Passed, 172 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
 | End-to-end tests, Chromium | `npm run test:e2e` | 76 tests (38 × desktop and mobile Chromium) passed in a full run; the Lab and service worker specs also passed repeated 4 and 2 times |
-| End-to-end tests, Firefox and WebKit | CI, first run on GitHub (commit 39c43cb) | 129 passed, 13 failed, 8 skipped; failures analysed and fixed below; **re-run pending** |
+| End-to-end tests, all four projects | CI on GitHub (Ubuntu), commit 8f86b3f | 140 passed, 0 failed, 0 flaky, 12 skipped by design (the service worker spec outside Chromium, the axe audit on Firefox). The first run (commit 39c43cb) had 13 failures, analysed below |
 | Accessibility rules (axe-core 4.14, WCAG 2.0/2.1/2.2 A and AA) | `e2e/a11y.spec.ts` | 0 violations on 15 routes plus the loaded SOC Workbench, dark and light themes, desktop and mobile |
 | Web app manifest and installability | Chromium DevTools protocol | No manifest errors, no installability errors |
 
@@ -132,15 +131,15 @@ stalled beyond 20 s. The same script against the local build: 868–893 ms seque
 ## First CI run on Firefox and WebKit
 
 The first CI run of 1.0 (GitHub Actions, Ubuntu) ran every spec on four projects. Its failures, all
-fixed in the following commit and checked on Chromium, which is all that can run locally:
+fixed in commit 8f86b3f, whose CI run passed on all four projects:
 
 - **Firefox, 9 tests:** the console showed a CSP report for a blocked `eval`. Zod 4 probes
   `new Function("")` on first use to decide whether to compile parsers; the CSP blocks it as
   intended and Zod falls back, but Firefox logs the violation. Chromium only fires a
   `securitypolicyviolation` event, which the specs did not watch. Fixed with Zod's jitless mode,
   set before any parse; the specs now turn every `securitypolicyviolation` event into a console
-  error, and that check failed on Chromium before the fix and passes after it. The deployed 1.0
-  build has the harmless console report until the fix is deployed.
+  error, and that check failed on Chromium before the fix and passes after it. The fix is
+  deployed.
 - **Firefox, axe audit (2 tests):** the page process crashed inside the axe analysis, on both
   themes, while the other Firefox specs visiting the same routes passed. The audit now runs on
   Chromium and WebKit only; not investigated further.

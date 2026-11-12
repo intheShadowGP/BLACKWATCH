@@ -75,8 +75,8 @@
 ## Release 1.0
 
 - [x] Documentation and quality report updated, version 1.0.0
-- [ ] Push a release branch and open a pull request; confirm CI (Firefox and WebKit included)
-- [ ] Merge into `main` and confirm the deployment
+- [x] Push `main`; CI green on Chromium, Firefox and WebKit after one round of fixes
+- [x] Deployment confirmed
 - [ ] Tag v1.0.0 and publish the GitHub release
 
 ## After 1.0

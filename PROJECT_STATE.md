@@ -6,9 +6,8 @@ Last updated: 2026-11-12 · Version 1.0.0
 
 Milestones 0 to 5 are complete. Every module works on real, traceable public data or on the
 user's own files, the application is installable and usable offline, and the quality checks listed
-in [QUALITY_REPORT.md](QUALITY_REPORT.md) pass locally. Version 0.4 is deployed at
-https://intheshadowgp.github.io/BLACKWATCH/ by the GitHub Actions workflow; the 1.0 commits are
-local and have not been pushed.
+in [QUALITY_REPORT.md](QUALITY_REPORT.md) pass, in CI on Chromium, Firefox and WebKit. Version
+1.0.0 is deployed at https://intheshadowgp.github.io/BLACKWATCH/.
 
 ## Milestones
 
@@ -18,8 +17,8 @@ local and have not been pushed.
 | 1 — Intelligence | Complete with the partial areas listed below, deployed |
 | 2 — Security Toolbox | Complete, deployed |
 | 3 — SOC Workbench | Complete, deployed |
-| 4 — Cyber Lab | Complete, tested locally, not yet deployed |
-| 5 — Production hardening | Complete, tested locally (Chromium), not yet deployed |
+| 4 — Cyber Lab | Complete, deployed |
+| 5 — Production hardening | Complete, deployed |
 
 ## Implemented and tested
 
@@ -60,18 +59,14 @@ local and have not been pushed.
 
 ## Not verified
 
-- Firefox and WebKit: configured in CI, never executed (they could not be started on the
-  development machine).
-- The 1.0 workflow changes have not run on GitHub.
+- Firefox and WebKit locally (they cannot be started on the development machine); they pass in CI.
+- The service worker outside Chromium, and the axe audit on Firefox (see QUALITY_REPORT.md).
 
 ## Deployment
 
 - `deploy.yml` builds the datasets, verifies and publishes on push and daily; `ci.yml` runs lint,
   types, unit and end-to-end tests on fixtures. Both ran successfully on GitHub for version 0.4.
-- Releasing 1.0 needs the owner's decision. Pushing `main` deploys at once, before Firefox and
-  WebKit have ever run, and a deployed service worker stays in visitors' browsers. The safer path:
-  push a release branch and open a pull request (CI runs every browser, nothing deploys), merge
-  once CI is green, then tag `v1.0.0` and publish a GitHub release.
+- Remaining release step, the owner's decision: tag `v1.0.0` and publish a GitHub release.
 
 ## Known limitations
 

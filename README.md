@@ -138,8 +138,8 @@ platform features the code relies on: Chrome and Edge 111, Firefox 128, Safari 1
 Tailwind 4, regular expression look-behind in the indicator extractor). Offline support needs
 service workers, which private browsing modes may disable.
 
-Tested: Chromium (desktop and mobile emulation), automatically. Firefox and WebKit run in CI; see
-[QUALITY_REPORT.md](QUALITY_REPORT.md) for whether that run has passed.
+Tested automatically in CI on Chromium (desktop and mobile emulation), Firefox and WebKit. Offline
+support is tested on Chromium only; see [QUALITY_REPORT.md](QUALITY_REPORT.md).
 
 ## Privacy model
 
@@ -227,8 +227,7 @@ Issues and pull requests are welcome. Before opening a pull request:
 - Offline, only the datasets opened while online are available, and only while they match the
   last manifest seen.
 - Light-theme users may see the dark background for an instant at start-up.
-- Firefox and WebKit could not be run on the development machine; their results depend on CI.
-  The offline support is tested on Chromium only.
+- Offline support is tested on Chromium only; the accessibility audit runs on Chromium and WebKit.
 
 ## Development assistance disclosure
 
