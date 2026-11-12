@@ -131,6 +131,7 @@ export const en = {
 
   'pwa.update': 'A new version of BLACKWATCH is available.',
   'pwa.reload': 'Reload to update',
+  'pwa.replaced': 'BLACKWATCH was updated in another tab. Reload this tab when convenient to use the new version.',
 
   'storage.banner':
     'Local storage is unavailable: preferences and work will not be kept after this session.',

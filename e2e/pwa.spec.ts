@@ -216,3 +216,23 @@ test('deleting local data removes the dataset copies and leaves other caches alo
   expect(names).toContain('another-site-on-this-origin');
   expect(names.some((name) => name.startsWith('blackwatch-shell-'))).toBe(true);
 });
+
+test('tells other open tabs to reload, without reloading them, after an update applied in one tab', async ({ context }) => {
+  const first = await context.newPage();
+  await openControlled(first);
+  const second = await context.newPage();
+  let secondLoads = 0;
+  second.on('load', () => (secondLoads += 1));
+  await second.goto(url('/settings'));
+  await expect(second.getByRole('heading', { level: 1 })).toBeVisible();
+  await second.waitForFunction(() => navigator.serviceWorker.controller !== null);
+
+  workerScript = readFileSync(join(DIST, 'sw.js'), 'utf8').replace(/const VERSION = '[^']+';/, "const VERSION = 'e2e-other-tab';");
+  await first.reload();
+  await expect(first.getByText('A new version of BLACKWATCH is available.')).toBeVisible();
+  await first.getByRole('button', { name: 'Reload to update' }).click();
+  await first.waitForEvent('load');
+
+  await expect(second.getByText(/updated in another tab/)).toBeVisible();
+  expect(secondLoads).toBe(1);
+});

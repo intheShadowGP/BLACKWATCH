@@ -68,8 +68,10 @@ local and have not been pushed.
 
 - `deploy.yml` builds the datasets, verifies and publishes on push and daily; `ci.yml` runs lint,
   types, unit and end-to-end tests on fixtures. Both ran successfully on GitHub for version 0.4.
-- Releasing 1.0 needs the owner's decision: push `main`, check the CI run (Firefox and WebKit
-  included), then tag `v1.0.0` and publish a GitHub release.
+- Releasing 1.0 needs the owner's decision. Pushing `main` deploys at once, before Firefox and
+  WebKit have ever run, and a deployed service worker stays in visitors' browsers. The safer path:
+  push a release branch and open a pull request (CI runs every browser, nothing deploys), merge
+  once CI is green, then tag `v1.0.0` and publish a GitHub release.
 
 ## Known limitations
 

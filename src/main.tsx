@@ -20,5 +20,9 @@ createRoot(container).render(
   </StrictMode>,
 );
 
-// Production builds only: the development server serves modules that must not be cached.
-if (import.meta.env.PROD) void registerServiceWorker();
+// Production builds only: the development server serves modules that must not be cached. Registered
+// after the page has loaded, so precaching the application does not compete with the first visit.
+if (import.meta.env.PROD) {
+  if (document.readyState === 'complete') void registerServiceWorker();
+  else window.addEventListener('load', () => void registerServiceWorker(), { once: true });
+}

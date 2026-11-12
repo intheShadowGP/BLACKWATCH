@@ -297,7 +297,12 @@ precaches every built file except the datasets, atomically and bypassing the HTT
 version derived from their content. Datasets are network first; the copy kept for offline use is
 served only if its SHA-256 matches the cached manifest, otherwise the request fails as a network
 error and the page says so (never "not published"). A new version waits until the user reloads from
-the notice, in that tab only: an automatic reload would discard SOC imports held in memory. Cache
+the notice, in that tab only: an automatic reload would discard SOC imports held in memory. Other
+open tabs are then served by the new version while running the previous code, so a route they have
+not loaded yet may fail; they show a notice asking for a reload when convenient, and never reload by
+themselves. The worker is registered after the page's load event, so precaching does not compete
+with the first visit. The build is deterministic: the daily rebuild with fresh datasets produces
+the same worker and no spurious update notice. Cache
 names carry a "blackwatch-" prefix because other sites of the account share the origin; deleting
 local data removes the dataset copies and keeps the application shell, which holds no user data.
 End-to-end specs block service workers; a dedicated spec serves the build under /BLACKWATCH/ and

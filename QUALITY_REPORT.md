@@ -18,15 +18,19 @@ check) have **not** run on GitHub yet.
 | Production build | `npm run build` | Passed; main bundle 593 kB (184 kB gzip); service worker precaches 60 files |
 | Repository identity check | `npm run check:identity` | Passed, 172 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
-| End-to-end tests, Chromium | `npm run test:e2e` | 74 tests (37 × desktop and mobile Chromium) passed in a full run; the Lab and service worker specs also passed repeated 4 and 3 times |
+| End-to-end tests, Chromium | `npm run test:e2e` | 76 tests (38 × desktop and mobile Chromium) passed in a full run; the Lab and service worker specs also passed repeated 4 and 2 times |
 | End-to-end tests, Firefox and WebKit | `E2E_ALL_BROWSERS=1 npm run test:e2e` | **Not executed** (see "Not measured") |
 | Accessibility rules (axe-core 4.14, WCAG 2.0/2.1/2.2 A and AA) | `e2e/a11y.spec.ts` | 0 violations on 15 routes plus the loaded SOC Workbench, dark and light themes, desktop and mobile |
 | Web app manifest and installability | Chromium DevTools protocol | No manifest errors, no installability errors |
 
 ## Measurements
 
-**Lighthouse 12.8.2**, local production build with the live datasets, `http://localhost:5181/`
-(Overview), Playwright's Chromium headless shell, default throttling:
+**Lighthouse 12.8.2**, final 1.0.0 production build with the live datasets,
+`http://localhost:5181/` (Overview), Playwright's Chromium headless shell, default throttling. The
+service worker registers after the load event; Lighthouse does not list the worker's own requests,
+so the precaching cost is not visible in these figures. Fresh-profile visits to the same build with
+the worker active showed the page heading in 857–889 ms (10 sequential) and 871–886 ms (4 parallel,
+twice), as before the worker existed.
 
 | Form factor | Performance | Accessibility | Best practices | SEO | FCP | LCP | TBT | CLS |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -106,9 +110,11 @@ stalled beyond 20 s. The same script against the local build: 868–893 ms seque
   visit; offline reload; a route never visited online; a dataset opened online served offline; a
   dataset never opened reported as a network error; a cached dataset that no longer matches the
   cached manifest refused; the update notice with the previous version still in control until the
-  user reloads, then exactly one reload; Delete local data removes the dataset copies, keeps the
+  user reloads, then exactly one reload; another open tab told to reload and not reloaded; Delete local data removes the dataset
+  copies, keeps the
   application shell and leaves another cache of the same origin alone. Disabling the checksum
   comparison in the worker makes the mismatch test fail (checked once).
+  Checked by hand: two builds of the same source produce an identical `sw.js`.
 
 ## Explicit security test status
 

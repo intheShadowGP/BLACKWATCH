@@ -57,7 +57,7 @@ SOC Workbench view uses a synthetic log.
 - **Offline support.** A service worker generated at build time (`scripts/pwa/sw.template.js`)
   precaches the application files, keeps a copy of each dataset you open, and serves that copy
   offline only if its SHA-256 matches the cached manifest. A new version is announced and applied
-  when you choose to reload.
+  when you choose to reload; other open tabs are then asked to reload when convenient.
 
 ```
 src/

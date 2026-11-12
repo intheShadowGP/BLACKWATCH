@@ -134,6 +134,7 @@ export const fr: Record<MessageKey, string> = {
 
   'pwa.update': 'Une nouvelle version de BLACKWATCH est disponible.',
   'pwa.reload': 'Recharger pour mettre à jour',
+  'pwa.replaced': 'BLACKWATCH a été mis à jour dans un autre onglet. Rechargez cet onglet quand cela vous convient pour utiliser la nouvelle version.',
 
   'storage.banner':
     'Le stockage local est indisponible : les préférences et le travail ne seront pas conservés après cette session.',

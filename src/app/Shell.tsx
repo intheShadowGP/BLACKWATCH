@@ -70,10 +70,10 @@ function LanguageSwitch() {
 function UpdateNotice() {
   const { t } = useI18n();
   const update = useSyncExternalStore(subscribeUpdate, getUpdateState);
-  if (!update.waiting) return null;
+  if (update.status === 'none') return null;
   return (
     <div role="status" className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 text-sm text-fg">
-      <span>{t('pwa.update')}</span>
+      <span>{t(update.status === 'waiting' ? 'pwa.update' : 'pwa.replaced')}</span>
       <button type="button" onClick={applyUpdate} className="min-h-8 rounded-sm border border-line-strong px-3 text-xs font-semibold hover:bg-raised">
         {t('pwa.reload')}
       </button>
