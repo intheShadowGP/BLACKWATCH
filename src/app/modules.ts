@@ -79,7 +79,7 @@ export const MODULES: readonly ModuleDefinition[] = [
     titleKey: 'nav.lab',
     summaryKey: 'module.lab.summary',
     scopeKey: 'module.lab.scope',
-    status: 'planned',
+    status: 'available',
     milestone: 4,
   },
   {

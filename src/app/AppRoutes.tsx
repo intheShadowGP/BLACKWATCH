@@ -16,6 +16,8 @@ const AttackDetailPage = lazy(() => import('../pages/AttackDetailPage'));
 const ThreatIntelPage = lazy(() => import('../pages/ThreatIntelPage'));
 const ToolboxIndexPage = lazy(async () => ({ default: (await import('../pages/ToolboxPage')).ToolboxIndexPage }));
 const SocPage = lazy(() => import('../pages/SocPage'));
+const LabIndexPage = lazy(async () => ({ default: (await import('../pages/LabPage')).LabIndexPage }));
+const LabScenarioPage = lazy(async () => ({ default: (await import('../pages/LabPage')).LabScenarioPage }));
 const ToolPage = lazy(async () => ({ default: (await import('../pages/ToolboxPage')).ToolPage }));
 
 export function AppRoutes() {
@@ -34,6 +36,8 @@ export function AppRoutes() {
         <Route path="attack" element={<AttackPage />} />
         <Route path="attack/:attackId" element={<AttackDetailPage />} />
         <Route path="soc" element={<SocPage />} />
+        <Route path="lab" element={<LabIndexPage />} />
+        <Route path="lab/:scenarioId" element={<LabScenarioPage />} />
         <Route path="toolbox" element={<ToolboxIndexPage />} />
         <Route path="toolbox/:toolId" element={<ToolPage />} />
         <Route path="settings" element={<SettingsPage />} />
