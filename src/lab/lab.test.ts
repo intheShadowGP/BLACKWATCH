@@ -140,7 +140,9 @@ describe('scenario content', () => {
     expect(decoded).toBe("Write-Output 'BLACKWATCH training sample: no action performed'");
   });
 
-  it('cites ATT&CK techniques present in the published dataset', async () => {
+  // The deployment runs this check in its own non-blocking step (BLACKWATCH_DATASET_REFS=skip during
+  // verify): a new ATT&CK release must not stop the daily refresh of every other dataset.
+  it.skipIf(process.env.BLACKWATCH_DATASET_REFS === 'skip')('cites ATT&CK techniques present in the published dataset', async () => {
     const file = 'public/data/attack.json';
     if (!existsSync(file)) return;
     const ids = new Set((JSON.parse(readFileSync(file, 'utf8')) as { techniques: { id: string }[]; mitigations: { id: string }[] }).techniques.map((technique) => technique.id));

@@ -58,7 +58,13 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   const target = new URL(request.url);
-  if (target.origin !== SCOPE.origin || !target.pathname.startsWith(SCOPE.pathname)) return;
+  if (target.origin !== SCOPE.origin) return;
+  // The scope without its trailing slash (/BLACKWATCH) is the same application.
+  if (request.mode === 'navigate' && `${target.pathname}/` === SCOPE.pathname) {
+    event.respondWith(fromShell('index.html', request));
+    return;
+  }
+  if (!target.pathname.startsWith(SCOPE.pathname)) return;
   const path = target.pathname.slice(SCOPE.pathname.length);
 
   if (request.mode === 'navigate') {
@@ -66,7 +72,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (DATA_FILE.test(path)) {
-    event.respondWith(dataFile(request, path));
+    event.respondWith(dataFile(event, path));
     return;
   }
   if (PRECACHE.includes(path)) event.respondWith(fromShell(path, request));
@@ -77,16 +83,22 @@ async function fromShell(path, request) {
   return cached ?? fetch(request);
 }
 
-async function dataFile(request, path) {
+async function dataFile(event, path) {
   let response;
   try {
-    response = await fetch(request);
+    response = await fetch(event.request);
   } catch {
     return (await verifiedCopy(path)) ?? Response.error();
   }
-  const cache = await caches.open(DATA_CACHE);
-  if (response.ok) await cache.put(absolute(path), response.clone());
-  else if (response.status === 404) await cache.delete(absolute(path));
+  // Stored in the background: the page reads the response while the copy is written.
+  const copy = response.ok ? response.clone() : null;
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(DATA_CACHE);
+      if (copy) await cache.put(absolute(path), copy);
+      else if (response.status === 404) await cache.delete(absolute(path));
+    })(),
+  );
   return response;
 }
 

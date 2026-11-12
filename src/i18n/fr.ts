@@ -130,7 +130,7 @@ export const fr: Record<MessageKey, string> = {
   'settings.privacy.p2':
     'Le navigateur ne demande que des fichiers hébergés avec l’application elle-même. Les jeux de données de renseignement sont préparés à l’avance et publiés sous forme de fichiers statiques ; votre navigateur ne contacte jamais les fournisseurs de renseignement.',
   'settings.privacy.p3':
-    'L’hébergeur (GitHub Pages) voit néanmoins les métadonnées de connexion habituelles, comme votre adresse IP, lors du téléchargement de l’application. La politique de sécurité du contenu est fournie par un élément meta, moins robuste que des en-têtes de réponse HTTP.',
+    'L’hébergeur (GitHub Pages) voit néanmoins les métadonnées de connexion habituelles, comme votre adresse IP, lors du téléchargement de l’application. La politique de sécurité du contenu est fournie par un élément meta, moins robuste que des en-têtes de réponse HTTP. Les autres sites publiés depuis le même compte GitHub partagent cette origine web et pourraient techniquement lire ce que l’application enregistre dans votre navigateur.',
 
   'pwa.update': 'Une nouvelle version de BLACKWATCH est disponible.',
   'pwa.reload': 'Recharger pour mettre à jour',

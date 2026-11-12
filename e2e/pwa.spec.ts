@@ -107,6 +107,10 @@ const fetchStatus = (page: Page, file: string) =>
 
 const cacheNames = (page: Page) => page.evaluate(() => caches.keys());
 
+/** Waits until the worker has stored its offline copy of a data file (written in the background). */
+const stored = (page: Page, file: string) =>
+  expect.poll(() => page.evaluate((path) => caches.open('blackwatch-data').then((cache) => cache.match(path)).then(Boolean), file)).toBe(true);
+
 async function openControlled(page: Page) {
   await page.goto(url());
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -136,6 +140,7 @@ test('opens offline, including routes never visited online, with verified datase
 
   await page.goto(url('/vulnerabilities'));
   await expect(page.getByText('CVE-2026-10001').first()).toBeVisible();
+  await stored(page, 'data/kev.json');
 
   await stop();
   await page.reload();
@@ -162,6 +167,8 @@ test('refuses an offline copy that no longer matches the cached manifest', async
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.waitForLoadState('networkidle');
+  await stored(page, 'data/kev.json');
+  await stored(page, 'data/overview.json');
 
   await stop();
   expect(await fetchStatus(page, 'data/kev.json')).toBe('network error');

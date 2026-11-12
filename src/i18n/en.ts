@@ -127,7 +127,7 @@ export const en = {
   'settings.privacy.p2':
     'The browser only requests files hosted with the application itself. Intelligence datasets are prepared ahead of time and published as static files; your browser never contacts intelligence providers.',
   'settings.privacy.p3':
-    'The hosting provider (GitHub Pages) can still see standard connection metadata such as your IP address when the application is downloaded. The Content Security Policy is delivered through a meta element, which is weaker than HTTP response headers.',
+    'The hosting provider (GitHub Pages) can still see standard connection metadata such as your IP address when the application is downloaded. The Content Security Policy is delivered through a meta element, which is weaker than HTTP response headers. Other sites published from the same GitHub account share this web origin and could technically read what this application stores in your browser.',
 
   'pwa.update': 'A new version of BLACKWATCH is available.',
   'pwa.reload': 'Reload to update',
