@@ -32,7 +32,27 @@ test('plays a scenario with the best answers, resumes after reload and reproduce
   await answer(page, scenario, 0);
   await answer(page, scenario, 1);
 
-  // Progress survives a reload and answered steps stay locked.
+  // Progress survives a reload and answered steps stay locked. Saving is asynchronous: reload once
+  // both answers are stored, as a person would not reload within the same few milliseconds.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<number>((resolve) => {
+            const request = indexedDB.open('blackwatch');
+            request.onsuccess = () => {
+              const read = request.result.transaction('labProgress').objectStore('labProgress').get('ssh-bruteforce');
+              read.onsuccess = () => {
+                resolve(Object.keys(read.result?.data?.answers ?? {}).length);
+                request.result.close();
+              };
+              read.onerror = () => resolve(-1);
+            };
+            request.onerror = () => resolve(-1);
+          }),
+      ),
+    )
+    .toBe(2);
   await page.reload();
   const first = page.getByRole('region', { name: scenario.steps[0]?.prompt.en as string });
   await expect(first.getByText('Answer recorded')).toBeVisible();

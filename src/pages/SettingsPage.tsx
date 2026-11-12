@@ -11,6 +11,7 @@ import { DENSITIES, MOTIONS, THEMES } from '../lib/preferences';
 import {
   countRecords,
   deleteAllData,
+  deleteOfflineData,
   downloadJson,
   exportAllData,
   exportFileName,
@@ -68,6 +69,7 @@ function LocalDataPanel() {
     setBusy(true);
     try {
       await deleteAllData();
+      await deleteOfflineData();
       reset();
       setFeedback({ tone: 'info', text: t('settings.data.deleted') });
     } catch {
@@ -199,6 +201,8 @@ function FavoritesPanel() {
 export default function SettingsPage() {
   const { t } = useI18n();
   const { preferences, update } = usePreferences();
+  // Read once: a worker that takes control later shows on the next visit to this page.
+  const [offlineActive] = useState(() => 'serviceWorker' in navigator && navigator.serviceWorker.controller !== null);
 
   return (
     <>
@@ -259,8 +263,9 @@ export default function SettingsPage() {
               <dd className="font-mono text-fg">{SCHEMA_VERSION}</dd>
             </dl>
           </Panel>
-          <Panel title={t('settings.pending.title')}>
-            <p className="text-sm text-muted">{t('settings.pending.body')}</p>
+          <Panel title={t('settings.offline.title')}>
+            <p className="text-sm text-muted">{t('settings.offline.body')}</p>
+            <p className="mt-2 text-xs text-subtle">{t(offlineActive ? 'settings.offline.active' : 'settings.offline.inactive')}</p>
           </Panel>
         </div>
       </div>

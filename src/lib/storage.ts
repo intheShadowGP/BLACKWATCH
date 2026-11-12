@@ -77,6 +77,19 @@ export async function deleteAllData(database: BlackwatchDb = defaultDb): Promise
   });
 }
 
+/** Name of the Cache Storage cache holding the offline copies of datasets (see scripts/pwa/sw.template.js). */
+export const OFFLINE_DATA_CACHE = 'blackwatch-data';
+
+/**
+ * Deletes the offline copies of datasets. The application shell cache is kept: it holds the public
+ * application files, not user data, and deleting it would break offline use until the next update.
+ * Other caches of the same origin belong to other sites and are never touched.
+ */
+export async function deleteOfflineData(): Promise<void> {
+  if (typeof caches === 'undefined') return;
+  await caches.delete(OFFLINE_DATA_CACHE);
+}
+
 export function exportFileName(date: Date): string {
   const stamp = date.toISOString().replace(/[:.]/g, '-');
   return `blackwatch-export-${stamp}.json`;

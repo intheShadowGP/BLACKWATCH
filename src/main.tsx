@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import { AppRoutes } from './app/AppRoutes';
 import { PreferencesProvider } from './app/PreferencesProvider';
+import { registerServiceWorker } from './pwa/register';
 import './styles/index.css';
 
 const container = document.getElementById('root');
@@ -18,3 +19,6 @@ createRoot(container).render(
     </PreferencesProvider>
   </StrictMode>,
 );
+
+// Production builds only: the development server serves modules that must not be cached.
+if (import.meta.env.PROD) void registerServiceWorker();

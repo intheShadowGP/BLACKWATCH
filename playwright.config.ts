@@ -14,6 +14,9 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'retain-on-failure',
+    // Specs observe and stub network requests, which a service worker would answer instead.
+    // e2e/pwa.spec.ts allows it and serves the build itself.
+    serviceWorkers: 'block',
   },
   // Cold start of several browsers at once can exceed the default 5 s on slower machines.
   expect: {

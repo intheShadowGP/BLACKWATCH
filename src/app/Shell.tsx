@@ -1,10 +1,11 @@
-import { Suspense, useEffect, useId, useRef, useState } from 'react';
+import { Suspense, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { Brand } from '../components/ui';
 import { LANGUAGES } from '../i18n';
+import { applyUpdate, getUpdateState, subscribeUpdate } from '../pwa/register';
 import { MODULES } from './modules';
 import { useI18n, usePreferences } from './preferences-context';
 
@@ -61,6 +62,21 @@ function LanguageSwitch() {
           <span className="sr-only"> {t(`lang.${language}`)}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+/** Offered, never forced: reloading discards work held in memory, such as an SOC import. */
+function UpdateNotice() {
+  const { t } = useI18n();
+  const update = useSyncExternalStore(subscribeUpdate, getUpdateState);
+  if (!update.waiting) return null;
+  return (
+    <div role="status" className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 text-sm text-fg">
+      <span>{t('pwa.update')}</span>
+      <button type="button" onClick={applyUpdate} className="min-h-8 rounded-sm border border-line-strong px-3 text-xs font-semibold hover:bg-raised">
+        {t('pwa.reload')}
+      </button>
     </div>
   );
 }
@@ -133,6 +149,7 @@ export function Shell() {
             {t('storage.banner')}
           </p>
         ) : null}
+        <UpdateNotice />
 
         <main id="main" ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <ErrorBoundary resetKey={location.pathname}>

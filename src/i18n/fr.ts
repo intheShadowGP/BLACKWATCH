@@ -116,9 +116,11 @@ export const fr: Record<MessageKey, string> = {
     'Données locales supprimées. Les préférences ont été réinitialisées à leurs valeurs par défaut.',
   'settings.data.error': 'L’opération a échoué : le stockage local est indisponible.',
   'settings.data.unavailable': 'Le stockage local est indisponible dans cette session de navigateur.',
-  'settings.pending.title': 'Pas encore disponible',
-  'settings.pending.body':
-    'Les commandes du cache des jeux de données arriveront avec le mode hors ligne (jalon 5). Les jeux de données passent actuellement par le cache habituel du navigateur.',
+  'settings.offline.title': 'Utilisation hors ligne',
+  'settings.offline.body':
+    'Après une première visite, l’application s’ouvre sans connexion réseau. Les jeux de données que vous avez ouverts sont conservés pour une consultation hors ligne et ne sont servis hors ligne que s’ils correspondent aux empreintes du manifeste publié. La suppression des données locales efface aussi ces copies.',
+  'settings.offline.active': 'Le mode hors ligne est actif dans ce navigateur.',
+  'settings.offline.inactive': 'Le mode hors ligne n’est pas actif dans cette session (première visite, navigation privée ou navigateur non compatible).',
   'settings.version.title': 'Version',
   'settings.version.app': 'Application',
   'settings.version.schema': 'Schéma de la base locale',
@@ -129,6 +131,9 @@ export const fr: Record<MessageKey, string> = {
     'Le navigateur ne demande que des fichiers hébergés avec l’application elle-même. Les jeux de données de renseignement sont préparés à l’avance et publiés sous forme de fichiers statiques ; votre navigateur ne contacte jamais les fournisseurs de renseignement.',
   'settings.privacy.p3':
     'L’hébergeur (GitHub Pages) voit néanmoins les métadonnées de connexion habituelles, comme votre adresse IP, lors du téléchargement de l’application. La politique de sécurité du contenu est fournie par un élément meta, moins robuste que des en-têtes de réponse HTTP.',
+
+  'pwa.update': 'Une nouvelle version de BLACKWATCH est disponible.',
+  'pwa.reload': 'Recharger pour mettre à jour',
 
   'storage.banner':
     'Le stockage local est indisponible : les préférences et le travail ne seront pas conservés après cette session.',

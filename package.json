@@ -21,7 +21,8 @@
     "audit:deps": "npm audit --audit-level=moderate",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run check:identity",
     "data:build": "node scripts/data/build.mjs",
-    "reference:ports": "node scripts/reference/build-ports.mjs"
+    "reference:ports": "node scripts/reference/build-ports.mjs",
+    "icons": "node scripts/pwa-icons.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.7",

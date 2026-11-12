@@ -113,9 +113,11 @@ export const en = {
   'settings.data.deleted': 'Local data deleted. Preferences were reset to their defaults.',
   'settings.data.error': 'The operation failed: local storage is unavailable.',
   'settings.data.unavailable': 'Local storage is unavailable in this browser session.',
-  'settings.pending.title': 'Not available yet',
-  'settings.pending.body':
-    'Dataset cache controls arrive with offline support (Milestone 5). Datasets are currently served through the regular browser cache.',
+  'settings.offline.title': 'Offline use',
+  'settings.offline.body':
+    'After a first visit, the application opens without a network connection. Datasets you have opened are kept for offline reading and are only served offline while they match the checksums of the published manifest. Deleting local data also deletes these copies.',
+  'settings.offline.active': 'Offline support is active in this browser.',
+  'settings.offline.inactive': 'Offline support is not active in this browser session (first visit, private browsing or unsupported browser).',
   'settings.version.title': 'Version',
   'settings.version.app': 'Application',
   'settings.version.schema': 'Local database schema',
@@ -126,6 +128,9 @@ export const en = {
     'The browser only requests files hosted with the application itself. Intelligence datasets are prepared ahead of time and published as static files; your browser never contacts intelligence providers.',
   'settings.privacy.p3':
     'The hosting provider (GitHub Pages) can still see standard connection metadata such as your IP address when the application is downloaded. The Content Security Policy is delivered through a meta element, which is weaker than HTTP response headers.',
+
+  'pwa.update': 'A new version of BLACKWATCH is available.',
+  'pwa.reload': 'Reload to update',
 
   'storage.banner':
     'Local storage is unavailable: preferences and work will not be kept after this session.',
