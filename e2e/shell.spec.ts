@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { attachResourceTimingOnFailure } from './diagnostics';
+import { attachResourceTimingOnFailure, reportCspViolations } from './diagnostics';
 import { DATA_FILES } from '../src/test/fixtures';
 
 /** Serves the synthetic fixture datasets: tests never depend on live intelligence. */
@@ -34,6 +34,7 @@ async function openNavigation(page: Page, isMobile: boolean) {
 
 test.use({ locale: 'en-US' });
 attachResourceTimingOnFailure();
+reportCspViolations();
 
 test.beforeEach(async ({ page }) => {
   await serveFixtures(page);

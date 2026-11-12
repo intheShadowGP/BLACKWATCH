@@ -3,10 +3,11 @@ import { expect, test, type Page } from '@playwright/test';
 import { CATALOG, loadScenario } from '../src/lab/catalog';
 import { bestAnswer, scenarioMax } from '../src/lab/engine';
 import type { Scenario } from '../src/lab/model';
-import { attachResourceTimingOnFailure } from './diagnostics';
+import { attachResourceTimingOnFailure, reportCspViolations } from './diagnostics';
 
 test.use({ locale: 'en-US' });
 attachResourceTimingOnFailure();
+reportCspViolations();
 
 async function answer(page: Page, scenario: Scenario, stepIndex: number) {
   const step = scenario.steps[stepIndex];

@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { sampleAccessLog, sampleAuthLog, sampleWindowsXml } from '../src/soc/fixtures';
-import { attachResourceTimingOnFailure } from './diagnostics';
+import { attachResourceTimingOnFailure, reportCspViolations } from './diagnostics';
 
 test.use({ locale: 'en-US' });
 attachResourceTimingOnFailure();
+reportCspViolations();
 
 async function importSamples(page: Page) {
   await page.locator('input[type=file][multiple]').setInputFiles([
@@ -25,7 +26,10 @@ test('analyses imported logs locally, without any network request', async ({ pag
   await page.goto('/#/soc');
   await expect(page.getByRole('heading', { level: 1, name: 'SOC Workbench' })).toBeVisible();
   const requests: string[] = [];
-  page.on('request', (request) => requests.push(request.url()));
+  // blob: URLs are in-memory objects of the page (WebKit reports them as requests), not network traffic.
+  page.on('request', (request) => {
+    if (!request.url().startsWith('blob:')) requests.push(request.url());
+  });
   await importSamples(page);
 
   // Only the application's own worker script may be requested; no log content leaves the page.

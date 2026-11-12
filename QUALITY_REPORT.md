@@ -19,7 +19,7 @@ check) have **not** run on GitHub yet.
 | Repository identity check | `npm run check:identity` | Passed, 172 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
 | End-to-end tests, Chromium | `npm run test:e2e` | 76 tests (38 × desktop and mobile Chromium) passed in a full run; the Lab and service worker specs also passed repeated 4 and 2 times |
-| End-to-end tests, Firefox and WebKit | `E2E_ALL_BROWSERS=1 npm run test:e2e` | **Not executed** (see "Not measured") |
+| End-to-end tests, Firefox and WebKit | CI, first run on GitHub (commit 39c43cb) | 129 passed, 13 failed, 8 skipped; failures analysed and fixed below; **re-run pending** |
 | Accessibility rules (axe-core 4.14, WCAG 2.0/2.1/2.2 A and AA) | `e2e/a11y.spec.ts` | 0 violations on 15 routes plus the loaded SOC Workbench, dark and light themes, desktop and mobile |
 | Web app manifest and installability | Chromium DevTools protocol | No manifest errors, no installability errors |
 
@@ -129,15 +129,37 @@ stalled beyond 20 s. The same script against the local build: 868–893 ms seque
 | Network failures, missing datasets | Tested |
 | Offline copies that do not match the published checksums | Tested (Chromium) |
 
+## First CI run on Firefox and WebKit
+
+The first CI run of 1.0 (GitHub Actions, Ubuntu) ran every spec on four projects. Its failures, all
+fixed in the following commit and checked on Chromium, which is all that can run locally:
+
+- **Firefox, 9 tests:** the console showed a CSP report for a blocked `eval`. Zod 4 probes
+  `new Function("")` on first use to decide whether to compile parsers; the CSP blocks it as
+  intended and Zod falls back, but Firefox logs the violation. Chromium only fires a
+  `securitypolicyviolation` event, which the specs did not watch. Fixed with Zod's jitless mode,
+  set before any parse; the specs now turn every `securitypolicyviolation` event into a console
+  error, and that check failed on Chromium before the fix and passes after it. The deployed 1.0
+  build has the harmless console report until the fix is deployed.
+- **Firefox, axe audit (2 tests):** the page process crashed inside the axe analysis, on both
+  themes, while the other Firefox specs visiting the same routes passed. The audit now runs on
+  Chromium and WebKit only; not investigated further.
+- **WebKit, SOC import:** WebKit reports `blob:` URLs (in-memory objects) as requests; the spec
+  counted them as network traffic. They are now ignored.
+- **WebKit, regex timeout:** JavaScriptCore bounds catastrophic backtracking itself and reports no
+  match, so the 2-second stop never triggers. The spec accepts either outcome; the page stays
+  usable in both.
+- **Service worker spec on Firefox and WebKit:** every test is skipped there, but `afterAll` still
+  ran and closed a server that was never started. Fixed.
+
 ## Not measured
 
-- **Firefox and WebKit.** Playwright's builds could not be started on the development machine:
+- **Firefox and WebKit locally.** Playwright's builds could not be started on the development machine:
   launching Firefox failed with `spawn UNKNOWN` (started directly, Windows reported that its
   side-by-side configuration is incorrect); the WebKit download failed and its folder had no
   executable. Playwright's full Chromium (`chrome.exe`) was also refused ("Permission denied"),
-  while its headless shell runs. The cause was not established. CI is configured to run every spec
-  except the service worker spec on Firefox and WebKit; until that run is green, those browsers are
-  untested.
+  while its headless shell runs. The cause was not established. Results on those engines come from
+  CI only (see above).
 - The service worker on Firefox and WebKit, and installation on a real phone.
 - Manual screen-reader testing (the axe rules and keyboard tests are automated checks only).
 - Lighthouse on the deployed site (measured locally only).

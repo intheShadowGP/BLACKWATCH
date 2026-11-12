@@ -22,3 +22,18 @@ export function attachResourceTimingOnFailure(): void {
     await testInfo.attach('resource-timing.json', { path: file, contentType: 'application/json' });
   });
 }
+
+/**
+ * Turns Content Security Policy violations into console errors, which the specs already collect.
+ * Some engines report a blocked operation only as a `securitypolicyviolation` event, not on the
+ * console (Chromium did so for a caught `new Function` probe that Firefox logs as an error).
+ */
+export function reportCspViolations(): void {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      document.addEventListener('securitypolicyviolation', (event) => {
+        console.error(`CSP violation: ${event.violatedDirective} ${event.blockedURI || '(inline)'}`);
+      });
+    });
+  });
+}

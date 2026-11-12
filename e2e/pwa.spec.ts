@@ -63,13 +63,13 @@ function publish(kevVersion: string): Record<string, string> {
   return files;
 }
 
-let server: Server;
+let server: Server | undefined;
 let port = 0;
 let data = publish('2026.01.10');
 let workerScript: string | null = null;
 
 function start(): Promise<void> {
-  server = createServer((request, response) => {
+  const created = createServer((request, response) => {
     const path = decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname);
     if (!path.startsWith(BASE_PATH)) return void response.writeHead(404).end();
     const file = path.slice(BASE_PATH.length) || 'index.html';
@@ -86,16 +86,20 @@ function start(): Promise<void> {
     response.writeHead(200, { 'content-type': TYPES[extname(target)] ?? 'application/octet-stream', 'cache-control': 'no-cache' });
     response.end(readFileSync(target));
   });
-  return new Promise((resolve) => server.listen(port, '127.0.0.1', () => {
-    port = (server.address() as AddressInfo).port;
+  server = created;
+  return new Promise((resolve) => created.listen(port, '127.0.0.1', () => {
+    port = (created.address() as AddressInfo).port;
     resolve();
   }));
 }
 
 function stop(): Promise<void> {
+  // afterAll also runs when every test was skipped, and beforeAll then never started the server.
+  const current = server;
+  if (!current?.listening) return Promise.resolve();
   return new Promise((resolve) => {
-    server.close(() => resolve());
-    server.closeAllConnections();
+    current.close(() => resolve());
+    current.closeAllConnections();
   });
 }
 
@@ -128,7 +132,7 @@ test.afterAll(async () => {
 test.afterEach(async () => {
   data = publish('2026.01.10');
   workerScript = null;
-  if (!server.listening) await start();
+  if (!server?.listening) await start();
 });
 
 test('opens offline, including routes never visited online, with verified dataset copies only', async ({ page }) => {

@@ -1,3 +1,5 @@
+// Must run before any schema parses data.
+import './lib/zod-config';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';

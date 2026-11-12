@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
-import { attachResourceTimingOnFailure } from './diagnostics';
+import { attachResourceTimingOnFailure, reportCspViolations } from './diagnostics';
 
 test.use({ locale: 'en-US' });
 attachResourceTimingOnFailure();
+reportCspViolations();
 
 function collectErrors(page: Page) {
   const errors: string[] = [];
@@ -20,7 +21,9 @@ test('stops a catastrophic regular expression and keeps the page usable', async 
   await page.getByLabel('Pattern').fill('^(a+)+$');
   await page.getByLabel('Text', { exact: true }).fill(`${'a'.repeat(40)}!`);
   await page.getByRole('button', { name: 'Test' }).click();
-  await expect(page.getByText(/Stopped after 2 seconds/)).toBeVisible({ timeout: 8000 });
+  // Chromium and Gecko backtrack until the worker is stopped. JavaScriptCore bounds backtracking itself
+  // and reports no match: either way the page must not hang.
+  await expect(page.getByText(/Stopped after 2 seconds|^0 matches in/)).toBeVisible({ timeout: 8000 });
 
   // The interface still responds and a normal pattern runs in a fresh worker.
   await page.getByLabel('Pattern').fill('(?<word>a{3})');
