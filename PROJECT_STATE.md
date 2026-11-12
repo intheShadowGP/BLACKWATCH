@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-11-11 · Version 0.4.0
+Last updated: 2026-11-11 · Version 0.5.0
 
 ## Summary
 
@@ -17,7 +17,7 @@ the repository has no remote yet.
 | 1 — Intelligence | Mostly complete (see "Partially implemented"); deployment pending |
 | 2 — Security Toolbox | Complete, tested locally |
 | 3 — SOC Workbench | Complete, tested locally |
-| 4 — Cyber Lab | Not started |
+| 4 — Cyber Lab | Complete, tested locally |
 | 5 — Production hardening | Not started |
 
 ## Implemented and tested
@@ -56,6 +56,10 @@ the repository has no remote yet.
   filters and flags, timeline, entities; explicit save of investigations; Markdown report, CSV and
   JSON exports.
 
+- **Cyber Lab:** ten synthetic scenarios with evidence, five graded steps each (investigation,
+  decision, containment, remediation), feedback and cited guidance, locked answers, versioned local
+  progress, restart with confirmation, Markdown report.
+
 ## Partially implemented
 
 - Vulnerability Center: no OSV or GitHub Advisory Database data; CVEs older than 7 days are only
@@ -67,7 +71,7 @@ the repository has no remote yet.
 
 ## Not implemented
 
-Cyber Lab, PWA and offline support.
+PWA and offline support.
 
 ## Deployment
 

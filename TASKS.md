@@ -56,9 +56,10 @@
 
 ## Milestone 4 — Cyber Lab
 
-- [ ] Scenario engine: evidence, tasks, decisions, scoring, final report
-- [ ] Ten synthetic scenarios
-- [ ] Local progress storage
+- [x] Scenario engine: evidence, tasks, decisions, scoring, final report
+- [x] Ten synthetic scenarios with cited guidance
+- [x] Local progress storage, versioned
+- [ ] Optional: more scenarios and difficulty levels
 
 ## Milestone 5 — Production hardening
 

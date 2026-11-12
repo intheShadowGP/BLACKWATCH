@@ -141,6 +141,12 @@ export function classifyIpv6(groups: readonly number[]): IocClass {
   const first = groups[0] ?? 0;
   if (groups.every((group) => group === 0)) return 'unspecified';
   if (groups.slice(0, 7).every((group) => group === 0) && groups[7] === 1) return 'loopback';
+  // IPv4-mapped addresses (::ffff:a.b.c.d, as Windows logs IPv4 clients) take the class of the IPv4 address.
+  if (groups.slice(0, 5).every((group) => group === 0) && groups[5] === 0xffff) {
+    const high = groups[6] ?? 0;
+    const low = groups[7] ?? 0;
+    return classifyIpv4([high >> 8, high & 255, low >> 8, low & 255]);
+  }
   if ((first & 0xffc0) === 0xfe80) return 'linkLocal';
   if ((first & 0xfe00) === 0xfc00) return 'uniqueLocal';
   if ((first & 0xff00) === 0xff00) return 'multicast';

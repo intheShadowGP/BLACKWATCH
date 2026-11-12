@@ -243,3 +243,30 @@ Windows event identifiers were checked against Microsoft's audit event documenta
 4688, 4720, 4732, 4740, 1102 on their own pages; 4728 and 4756 on the security group management
 page). ATT&CK technique identifiers are checked by a test against the published dataset when it is
 present; this caught that Clear Windows Event Logs is T1685.005 in ATT&CK v20.
+
+## D-034 — Cyber Lab: deterministic scenarios with cited answer keys
+
+Ten synthetic scenarios cover the topics named in the specification; a test maps each topic to a
+scenario and checks the required parts (context, incident, evidence, investigation, decision,
+containment and remediation steps, scoring, report). Scoring is deterministic: single-choice
+options carry points (partial credit where practitioners accept an option but prefer another, for
+example powering off instead of isolating during ransomware), multiple-selection steps subtract
+wrong selections and never reward selecting everything. Answers lock once feedback is shown.
+Each step cites public guidance: NIST CSF 2.0 subcategories as used by NIST SP 800-61r3 (April 2025,
+which superseded r2), MITRE ATT&CK mitigations, and the CISA and ANSSI ransomware guides.
+Subcategory statements were checked against the CSF 2.0 text.
+
+## D-035 — Synthetic and inert scenario content
+
+Tests enforce that every address in scenario text is a documentation, private or loopback address
+and every domain a reserved example name; the only other host is the Windows event XML namespace.
+Encoded commands decode to an inert training string, and attack tool command lines are not
+reproduced. Log-shaped evidence is parsed by the SOC Workbench parsers with zero unparsed lines,
+and representative evidence triggers the matching SOC detection. Scenario bodies are separate
+chunks; the list page uses a small catalogue checked against them.
+
+## D-036 — Versioned Lab progress
+
+Progress is stored per scenario in IndexedDB with the scenario version. An attempt made on an
+older version keeps its frozen score and is never re-scored against new questions; the learner is
+offered a restart, which asks for confirmation.

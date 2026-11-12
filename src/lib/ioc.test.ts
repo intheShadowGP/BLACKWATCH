@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_IOC_INPUT_CHARS, classifyIpv4, defang, extractIocs, parseIpv4, parseIpv6, refang, validateIoc } from './ioc';
+import { MAX_IOC_INPUT_CHARS, classifyIpv4, classifyIpv6, defang, extractIocs, parseIpv4, parseIpv6, refang, validateIoc } from './ioc';
 
 const values = (text: string, type: string) =>
   extractIocs(text).iocs.filter((ioc) => ioc.type === type).map((ioc) => ioc.value);
@@ -58,6 +58,12 @@ describe('IPv6', () => {
       expect(parseIpv6(address)).toBeNull();
     },
   );
+
+  it('classifies IPv4-mapped addresses by their IPv4 part', () => {
+    expect(classifyIpv6(parseIpv6('::ffff:10.70.4.66') as number[])).toBe('private');
+    expect(classifyIpv6(parseIpv6('::ffff:192.0.2.1') as number[])).toBe('documentation');
+    expect(classifyIpv6(parseIpv6('::ffff:8.8.8.8') as number[])).toBe('public');
+  });
 
   it('expands the embedded IPv4 form', () => {
     expect(parseIpv6('::ffff:192.0.2.1')).toEqual([0, 0, 0, 0, 0, 0xffff, 0xc000, 0x0201]);

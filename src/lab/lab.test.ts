@@ -12,6 +12,15 @@ import { clearProgress, emptyProgress, loadProgress, saveProgress } from './prog
 /** The topics required by the specification, mapped to the scenario covering each. */
 export const SPECIFICATION_SCENARIOS: Readonly<Record<string, string>> = {
   'SSH brute-force attack': 'ssh-bruteforce',
+  'Phishing incident': 'phishing',
+  'Ransomware simulation': 'ransomware',
+  'Lateral movement': 'lateral-movement',
+  'Suspicious PowerShell activity': 'powershell',
+  'Web application compromise': 'web-compromise',
+  'Account compromise': 'account-compromise',
+  'Simulated data exfiltration': 'exfiltration',
+  'Active Directory misconfiguration': 'ad-misconfiguration',
+  'Network intrusion': 'network-intrusion',
 };
 
 async function all(): Promise<Scenario[]> {
@@ -32,6 +41,7 @@ const labels = {
 
 describe('catalogue and specification coverage', () => {
   it('maps every required topic to a scenario', () => {
+    expect(Object.keys(SPECIFICATION_SCENARIOS)).toHaveLength(10);
     for (const [topic, id] of Object.entries(SPECIFICATION_SCENARIOS)) expect(SCENARIO_IDS, topic).toContain(id);
   });
 
@@ -91,7 +101,8 @@ describe('scenario content', () => {
         if (ioc.type === 'domain' || ioc.type === 'email' || ioc.type === 'url') {
           const host = ioc.type === 'url' ? new URL(ioc.value).hostname : ioc.value.split('@').pop() as string;
           const external = scenario.steps.flatMap((step) => step.references.map((reference) => new URL(reference.url).hostname));
-          const allowed = /(^|\.)(example|test|invalid|localhost)$/.test(host) || /(^|\.)example\.(com|net|org)$/.test(host) || external.includes(host);
+          // schemas.microsoft.com appears only as the XML namespace of Windows event exports.
+          const allowed = host === 'schemas.microsoft.com' || /(^|\.)(example|test|invalid|localhost)$/.test(host) || /(^|\.)example\.(com|net|org)$/.test(host) || external.includes(host);
           expect(allowed, `${scenario.id}: ${ioc.value}`).toBe(true);
         }
       }
@@ -111,6 +122,22 @@ describe('scenario content', () => {
     const findings = runDetections(events).findings;
     expect(findings.some((finding) => finding.rule === 'successAfterFailures' && finding.entity.value === '203.0.113.50')).toBe(true);
     expect(findings.some((finding) => finding.rule === 'accountChanges' && finding.entity.value === 'sysupdate')).toBe(true);
+
+    const detect = async (id: string, evidenceId: string) => {
+      const scenario = (await loadScenario(id)) as Scenario;
+      const item = scenario.evidence.find((entry) => entry.id === evidenceId);
+      const parsed = parseText(item?.content as string, item?.logFormat as never, { endYear: 2026, offsetMinutes: 0 });
+      return runDetections(parsed.events.map((event, index) => ({ ...event, id: index, file: 0 }))).findings;
+    };
+    expect((await detect('powershell', 'process')).some((finding) => finding.rule === 'encodedPowerShell' && finding.entity.value === 'WKS-042')).toBe(true);
+    expect((await detect('web-compromise', 'access')).some((finding) => finding.rule === 'suspiciousWebRequest' && finding.entity.value === '203.0.113.88')).toBe(true);
+  });
+
+  it('ships only inert encoded commands', async () => {
+    const scenario = (await loadScenario('powershell')) as Scenario;
+    const encoded = /-EncodedCommand ([A-Za-z0-9+/=]+)/.exec(scenario.evidence[0]?.content as string)?.[1] as string;
+    const decoded = Buffer.from(encoded, 'base64').toString('utf16le');
+    expect(decoded).toBe("Write-Output 'BLACKWATCH training sample: no action performed'");
   });
 
   it('cites ATT&CK techniques present in the published dataset', async () => {

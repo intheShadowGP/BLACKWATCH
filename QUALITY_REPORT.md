@@ -10,12 +10,12 @@ Only checks that were actually executed are reported as passed. All runs below w
 | --- | --- | --- |
 | Lint | `npm run lint` | Passed, 0 findings |
 | Type check | `npm run typecheck` | Passed (strict, `noUncheckedIndexedAccess`) |
-| Unit, integration and pipeline tests | `npm test` | Passed, 533 tests in 21 files |
+| Unit, integration and pipeline tests | `npm test` | Passed, 547 tests in 22 files |
 | Data pipeline against live sources | `npm run data:build` | 5/5 datasets fresh (KEV 1,779; NVD recent 4,694; NVD KEV 1,779; ATT&CK v20.1, 706 techniques; CERT-FR 80) |
 | Production build | `npm run build` | Passed (main bundle 551 kB, 174 kB gzip; the increase is the toolbox translations, which load with the shell) |
-| Repository identity check | `npm run check:identity` | Passed, 134 files plus build output |
+| Repository identity check | `npm run check:identity` | Passed, 155 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
-| End-to-end tests | `npm run test:e2e` | 54 tests (27 scenarios × desktop and mobile Chromium), fixture data: three consecutive full runs passed 54/54 |
+| End-to-end tests | `npm run test:e2e` | 60 tests (30 scenarios × desktop and mobile Chromium), fixture data: two consecutive full runs passed 60/60 |
 
 Manual review in a browser with the live datasets: overview, Vulnerability Center, CVE detail and
 ATT&CK matrix in French; no console errors. Regex tester in the browser: the pattern `^(a+)+# Quality report
@@ -35,7 +35,7 @@ Only checks that were actually executed are reported as passed. All runs below w
 | Production build | `npm run build` | Passed (main bundle 551 kB, 174 kB gzip; the increase is the toolbox translations, which load with the shell) |
 | Repository identity check | `npm run check:identity` | Passed, 111 files plus build output |
 | Dependency audit | `npm run audit:deps` | 0 known vulnerabilities |
-| End-to-end tests | `npm run test:e2e` | 44 tests (22 scenarios × desktop and mobile Chromium), fixture data: 4 of 5 consecutive full runs passed 44/44, one had 1 failure (see Observations) |
+| End-to-end tests | `npm run test:e2e` | 60 tests (30 scenarios × desktop and mobile Chromium), fixture data: two consecutive full runs passed 60/60 |
 
 Manual review in a browser with the live datasets: overview, Vulnerability Center, CVE detail and
 
