@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
+const ALL_BROWSERS = Boolean(process.env.CI) || process.env.E2E_ALL_BROWSERS === '1';
 
 export default defineConfig({
   testDir: './e2e',
@@ -28,5 +29,12 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    // Gecko and WebKit: opt-in locally (E2E_ALL_BROWSERS=1), always on in CI.
+    ...(ALL_BROWSERS
+      ? [
+          { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+          { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+        ]
+      : []),
   ],
 });

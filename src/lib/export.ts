@@ -9,7 +9,8 @@ export function downloadText(fileName: string, content: string, mimeType: string
   document.body.append(link);
   link.click();
   link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  // Revoking at once can cancel the download in Safari and Firefox; release the blob a little later.
+  window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
 /**

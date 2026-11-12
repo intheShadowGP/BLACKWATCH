@@ -1,5 +1,6 @@
 import { db as defaultDb, SCHEMA_VERSION, TABLE_NAMES, type BlackwatchDb, type TableName } from './db';
 import { parsePreferences, preferencesSchema, type Preferences } from './preferences';
+import { downloadText } from './export';
 
 const PREFERENCES_KEY = 'preferences';
 
@@ -83,14 +84,5 @@ export function exportFileName(date: Date): string {
 
 /** Hands a JSON document to the browser as a local file download. Nothing leaves the device. */
 export function downloadJson(fileName: string, data: unknown): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.rel = 'noopener';
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  downloadText(fileName, JSON.stringify(data, null, 2), 'application/json');
 }
