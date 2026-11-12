@@ -25,7 +25,9 @@ import {
   DATA_SCHEMA_VERSION,
   DATASET_SCHEMAS,
   manifestSchema,
+  overviewSummarySchema,
 } from '../../src/data/schemas.ts';
+import { buildOverviewSummary } from '../../src/data/overview.ts';
 import { selectPreviousCopy, sha256 } from './fallback.mjs';
 import { normalizeAttack, normalizeCertfr, normalizeCveList, normalizeKev } from './normalize.mjs';
 
@@ -204,6 +206,28 @@ async function writeAtomic(path, content) {
   await rename(temporary, path);
 }
 
+/**
+ * Derives overview.json from the kev and nvd-recent files as published by this run (fresh or kept
+ * stale copies), recording their checksums so the application can detect a mismatch.
+ */
+async function writeOverview(entries, generatedAt) {
+  const published = async (id) => {
+    const entry = entries.find((item) => item.id === id);
+    if (!entry || entry.status === 'missing' || !entry.sha256) return null;
+    const content = await readFile(join(OUTPUT, entry.file), 'utf8');
+    if (sha256(content) !== entry.sha256) throw new Error(`${id}: published file does not match its manifest checksum`);
+    return { data: DATASET_SCHEMAS[id].parse(JSON.parse(content)), retrievedAt: entry.retrievedAt, sha256: entry.sha256 };
+  };
+  const kev = await published('kev');
+  const recent = await published('nvd-recent');
+  if (!kev && !recent) return null;
+  const summary = overviewSummarySchema.parse(buildOverviewSummary({ kev, recent }, generatedAt, DATA_SCHEMA_VERSION));
+  const content = JSON.stringify(summary);
+  await writeAtomic(join(OUTPUT, 'overview.json'), content);
+  console.log(`overview  ${(content.length / 1024).toFixed(1)} kB`);
+  return { file: 'overview.json', sha256: sha256(content) };
+}
+
 async function run() {
   await mkdir(OUTPUT, { recursive: true });
   const only = (process.env.DATA_ONLY ?? '').split(',').map((value) => value.trim()).filter(Boolean);
@@ -248,10 +272,17 @@ async function run() {
     }
   }
 
+  const generatedAt = new Date().toISOString();
+  // The summary is an optimisation: without it the application computes the same figures itself.
+  const overview = await writeOverview(entries, generatedAt).catch((error) => {
+    console.log(`::warning::overview summary not published: ${error instanceof Error ? error.message : error}`);
+    return null;
+  });
   const manifest = manifestSchema.parse({
     schemaVersion: DATA_SCHEMA_VERSION,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     datasets: entries,
+    ...(overview ? { overview } : {}),
   });
   await writeAtomic(join(OUTPUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
   console.log(`manifest written: ${entries.filter((entry) => entry.status === 'fresh').length}/${entries.length} datasets fresh`);

@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DATA_FILES, HOSTILE, kev, manifest } from '../test/fixtures';
+import { DATA_FILES, HOSTILE, kev, manifest, nvdRecent, overview } from '../test/fixtures';
 import { mockDatasets, mockNoDatasets } from '../test/mock-data';
-import { freshness, loadDataset, loadManifest } from './loader';
-import { DATASET_IDS, DATASET_SCHEMAS, manifestSchema } from './schemas';
+import { freshness, loadDataset, loadManifest, loadOverview } from './loader';
+import { summarizeKev, summarizeRecent } from './overview';
+import { DATASET_IDS, DATASET_SCHEMAS, manifestSchema, overviewSummarySchema } from './schemas';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -11,6 +12,11 @@ afterEach(() => {
 describe('fixtures', () => {
   it('are valid against the published schemas', () => {
     expect(manifestSchema.safeParse(manifest).success).toBe(true);
+    expect(overviewSummarySchema.safeParse(overview).success).toBe(true);
+    // Manifests published before the summary existed stay valid.
+    const legacy = { ...manifest };
+    delete legacy.overview;
+    expect(manifestSchema.safeParse(legacy).success).toBe(true);
     for (const id of DATASET_IDS) {
       expect(DATASET_SCHEMAS[id].safeParse(DATA_FILES[`${id}.json`]).success, id).toBe(true);
     }
@@ -131,5 +137,65 @@ describe('freshness', () => {
 
   it('never reports a negative age for a clock that runs behind', () => {
     expect(freshness({ retrievedAt: '2026-01-11T00:00:00.000Z' }, now).ageHours).toBe(0);
+  });
+});
+
+describe('loadOverview', () => {
+  const requested = (fetchMock: ReturnType<typeof mockDatasets>) => fetchMock.mock.calls.map(([input]) => String(input).split('/').pop());
+
+  it('uses the published summary when it matches the published datasets', async () => {
+    const fetchMock = mockDatasets();
+    const result = await loadOverview();
+    expect(result.source).toBe('summary');
+    expect(result.kev).toMatchObject({ status: 'ready', data: overview.kev, entry: { id: 'kev' } });
+    expect(result.recent).toMatchObject({ status: 'ready', data: overview.recent, entry: { id: 'nvd-recent' } });
+    expect(requested(fetchMock)).toEqual(['manifest.json', 'overview.json']);
+  });
+
+  it('computes the same figures from the full datasets', async () => {
+    const fetchMock = mockDatasets({ 'manifest.json': { ...manifest, overview: undefined } });
+    const result = await loadOverview();
+    expect(result.source).toBe('datasets');
+    expect(result.kev).toMatchObject({ status: 'ready', data: overview.kev });
+    expect(result.recent).toMatchObject({ status: 'ready', data: overview.recent });
+    expect(requested(fetchMock)).not.toContain('overview.json');
+  });
+
+  it.each([
+    ['a summary of an older kev file', { ...overview, sources: { ...overview.sources, kev: 'd'.repeat(64) } }],
+    ['a summary of an older nvd-recent file', { ...overview, sources: { ...overview.sources, 'nvd-recent': 'd'.repeat(64) } }],
+    ['an invalid summary', { ...overview, recent: { total: -1 } }],
+    ['an absent summary', 'not-found'],
+  ])('falls back to the datasets for %s', async (_label, body) => {
+    mockDatasets({ 'overview.json': body });
+    const result = await loadOverview();
+    expect(result.source).toBe('datasets');
+    expect(result.kev).toMatchObject({ status: 'ready', data: overview.kev });
+  });
+
+  it('never trusts a summary when the manifest has no checksum for a published dataset', async () => {
+    mockDatasets({ 'manifest.json': { ...manifest, datasets: manifest.datasets.map((entry) => ({ ...entry, sha256: null })) } });
+    expect((await loadOverview()).source).toBe('datasets');
+  });
+
+  it('reports a dataset the manifest marks as missing', async () => {
+    const datasets = manifest.datasets.map((entry) => (entry.id === 'kev' ? { ...entry, status: 'missing' as const, sha256: null } : entry));
+    mockDatasets({ 'manifest.json': { ...manifest, datasets }, 'overview.json': { ...overview, sources: { ...overview.sources, kev: null }, kev: null } });
+    const result = await loadOverview();
+    expect(result.source).toBe('summary');
+    expect(result.kev).toEqual({ status: 'missing' });
+    expect(result.recent.status).toBe('ready');
+  });
+
+  it('derives the figures from the data, anchored on the retrieval time', () => {
+    const figures = summarizeKev(kev, '2026-01-10T06:00:00.000Z');
+    expect(figures).toMatchObject({ total: 2, added30: 1, ransomware: 1 });
+    expect(figures.months).toHaveLength(12);
+    expect(figures.months.at(-1)).toEqual({ label: '2026-01', value: 1 });
+    expect(figures.months.find((month) => month.label === '2025-11')?.value).toBe(1);
+    const recent = summarizeRecent(nvdRecent, new Set(['CVE-2026-10001']));
+    expect(recent.buckets).toMatchObject({ CRITICAL: 1, MEDIUM: 1, UNSCORED: 1 });
+    expect(recent.inKev).toBe(1);
+    expect(recent.critical.map((item) => item.id)).toEqual(['CVE-2026-10001']);
   });
 });

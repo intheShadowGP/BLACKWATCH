@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { MODULES } from '../app/modules';
 import { useI18n, usePreferences } from '../app/preferences-context';
@@ -6,13 +6,10 @@ import { BarChart, DatasetState, ExternalLink, FreshnessTag, SeverityBadge, Tabl
 import { Icon } from '../components/Icon';
 import { PageHeader, Panel, StatusBadge } from '../components/ui';
 import { freshness } from '../data/loader';
-import { useDataset, useManifest } from '../data/useDataset';
+import { useDataset, useManifest, useOverview } from '../data/useDataset';
 import type { MessageKey } from '../i18n';
 import { formatAge, formatDate, formatDateTime, formatNumber } from '../lib/format';
 import { countRecords } from '../lib/storage';
-import { bestCvss } from '../lib/vulnerabilities';
-
-const DAY = 86_400_000;
 
 function Kpi({ label, value, source, to }: { label: string; value: string; source: string; to?: string }) {
   const body = (
@@ -78,39 +75,13 @@ function LocalStoragePanel() {
 export default function OverviewPage() {
   const { t, language } = useI18n();
   const manifest = useManifest();
-  const kev = useDataset('kev');
-  const recent = useDataset('nvd-recent');
+  const overview = useOverview();
+  const loading = { status: 'loading' } as const;
+  const kev = 'kev' in overview ? overview.kev : loading;
+  const recent = 'recent' in overview ? overview.recent : loading;
   const certfr = useDataset('certfr');
-
-  const kevStats = useMemo(() => {
-    if (kev.status !== 'ready') return null;
-    // Windows are anchored on the retrieval time of the dataset, not on the current time.
-    const anchor = Date.parse(kev.entry.retrievedAt ?? kev.data.dateReleased);
-    const added30 = kev.data.items.filter((item) => anchor - Date.parse(item.dateAdded) <= 30 * DAY).length;
-    const months: { label: string; value: number }[] = [];
-    const end = new Date(anchor);
-    for (let offset = 11; offset >= 0; offset -= 1) {
-      const month = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - offset, 1)).toISOString().slice(0, 7);
-      months.push({ label: month, value: kev.data.items.filter((item) => item.dateAdded.startsWith(month)).length });
-    }
-    return { total: kev.data.items.length, added30, months, ransomware: kev.data.items.filter((item) => item.ransomware === 'Known').length };
-  }, [kev]);
-
-  const recentStats = useMemo(() => {
-    if (recent.status !== 'ready') return null;
-    const kevIds = new Set(kev.status === 'ready' ? kev.data.items.map((item) => item.cve) : []);
-    const buckets = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, NONE: 0, UNSCORED: 0 };
-    const scored = recent.data.items.map((item) => ({ item, cvss: bestCvss(item) }));
-    for (const { cvss } of scored) {
-      if (!cvss) buckets.UNSCORED += 1;
-      else buckets[cvss.severity] += 1;
-    }
-    const critical = scored
-      .filter((entry) => entry.cvss && entry.cvss.score >= 9)
-      .sort((a, b) => (b.cvss?.score ?? 0) - (a.cvss?.score ?? 0) || b.item.published.localeCompare(a.item.published))
-      .slice(0, 6);
-    return { total: scored.length, buckets, critical, inKev: scored.filter((entry) => kevIds.has(entry.item.id)).length };
-  }, [recent, kev]);
+  const kevStats = kev.status === 'ready' ? kev.data : null;
+  const recentStats = recent.status === 'ready' ? recent.data : null;
 
   const attackEntry = manifest.status === 'ready' ? manifest.manifest.datasets.find((entry) => entry.id === 'attack') : undefined;
   const modules = MODULES.filter((module) => module.id !== 'overview');
@@ -153,7 +124,10 @@ export default function OverviewPage() {
               <p className="mt-3 text-xs text-subtle">{t('overview.chart.severityNote', { kev: recentStats.inKev })}</p>
             </>
           ) : (
-            <DatasetState state={recent} />
+            // Reserves roughly the chart's height so the panels below do not move when it arrives.
+            <div className="min-h-52">
+              <DatasetState state={recent} />
+            </div>
           )}
         </Panel>
         <Panel title={t('overview.chart.kevMonthly')}>
@@ -163,17 +137,19 @@ export default function OverviewPage() {
               <p className="mt-3 text-xs text-subtle">{t('overview.chart.kevNote', { n: formatNumber(kevStats.ransomware, language) })}</p>
             </>
           ) : (
-            <DatasetState state={kev} />
+            <div className="min-h-[22rem]">
+              <DatasetState state={kev} />
+            </div>
           )}
         </Panel>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Panel title={t('overview.list.kev')}>
-          {kev.status === 'ready' ? (
+          {kevStats ? (
             <>
               <ul className="-my-2 divide-y divide-line">
-                {kev.data.items.slice(0, 6).map((item) => (
+                {kevStats.latest.map((item) => (
                   <li key={item.cve} className="py-2 text-sm">
                     <Link to={`/vulnerabilities/${item.cve}`} className="font-mono text-accent hover:underline">{item.cve}</Link>
                     <span className="ml-2 text-xs text-subtle">{formatDate(item.dateAdded, language)}</span>
@@ -193,11 +169,11 @@ export default function OverviewPage() {
             recentStats.critical.length > 0 ? (
               <>
                 <ul className="-my-2 divide-y divide-line">
-                  {recentStats.critical.map(({ item, cvss }) => (
+                  {recentStats.critical.map((item) => (
                     <li key={item.id} className="py-2 text-sm">
                       <span className="flex flex-wrap items-center gap-2">
                         <Link to={`/vulnerabilities/${item.id}`} className="font-mono text-accent hover:underline">{item.id}</Link>
-                        <SeverityBadge severity={cvss?.severity ?? null} score={cvss?.score} />
+                        <SeverityBadge severity={item.cvss.severity} score={item.cvss.score} />
                       </span>
                       <span className="mt-0.5 line-clamp-2 text-muted">{item.description}</span>
                     </li>

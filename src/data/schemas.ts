@@ -16,6 +16,8 @@ const httpUrl = z
 const isoDate = z.string().refine((value) => !Number.isNaN(Date.parse(value)), 'must be a date');
 const cveId = z.string().regex(/^CVE-\d{4}-\d{4,}$/);
 const text = (max: number) => z.string().max(max);
+const sha256 = z.string().regex(/^[0-9a-f]{64}$/);
+const count = z.number().int().nonnegative();
 
 // ── Manifest ────────────────────────────────────────────────────────────────
 
@@ -45,6 +47,8 @@ export const manifestSchema = z.object({
   schemaVersion: z.literal(DATA_SCHEMA_VERSION),
   generatedAt: isoDate,
   datasets: z.array(manifestEntrySchema).max(20),
+  /** Derived Overview summary (see overviewSummarySchema). Absent from manifests published before 1.0. */
+  overview: z.object({ file: z.literal('overview.json'), sha256 }).optional(),
 });
 export type Manifest = z.infer<typeof manifestSchema>;
 
@@ -230,3 +234,37 @@ export interface DatasetTypes {
   attack: AttackDataset;
   certfr: CertfrDataset;
 }
+
+// ── Overview summary (derived) ─────────────────────────────────────────────
+//
+// Computed by the pipeline from the published kev and nvd-recent files, so the
+// Overview does not download and parse several megabytes. `sources` holds the
+// sha256 of the files it was computed from: the application uses the summary
+// only when they match the manifest, and otherwise computes the same figures
+// from the full datasets (src/data/overview.ts holds the single implementation).
+
+export const kevSummarySchema = z.object({
+  total: count,
+  added30: count,
+  ransomware: count,
+  months: z.array(z.object({ label: z.string().regex(/^\d{4}-\d{2}$/), value: count })).length(12),
+  latest: z.array(kevItemSchema.pick({ cve: true, dateAdded: true, name: true })).max(6),
+});
+export type KevSummary = z.infer<typeof kevSummarySchema>;
+
+export const recentSummarySchema = z.object({
+  total: count,
+  inKev: count,
+  buckets: z.object({ CRITICAL: count, HIGH: count, MEDIUM: count, LOW: count, NONE: count, UNSCORED: count }),
+  critical: z.array(z.object({ id: cveId, published: isoDate, description: text(6000), cvss: cvssSchema })).max(6),
+});
+export type RecentSummary = z.infer<typeof recentSummarySchema>;
+
+export const overviewSummarySchema = z.object({
+  schemaVersion: z.literal(DATA_SCHEMA_VERSION),
+  generatedAt: isoDate,
+  sources: z.object({ kev: sha256.nullable(), 'nvd-recent': sha256.nullable() }),
+  kev: kevSummarySchema.nullable(),
+  recent: recentSummarySchema.nullable(),
+});
+export type OverviewSummary = z.infer<typeof overviewSummarySchema>;

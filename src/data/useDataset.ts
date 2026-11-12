@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { loadDataset, loadManifest, type DatasetResult, type ManifestResult } from './loader';
+import { loadDataset, loadManifest, loadOverview, type DatasetResult, type ManifestResult, type OverviewResult } from './loader';
 import type { DatasetId, DatasetTypes } from './schemas';
 
 export type Loading = { status: 'loading' };
@@ -26,6 +26,22 @@ export function useManifest(): ManifestResult | Loading {
   useEffect(() => {
     let cancelled = false;
     void loadManifest().then((result) => {
+      if (!cancelled) setState(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return state;
+}
+
+export function useOverview(): OverviewResult | Loading {
+  const [state, setState] = useState<OverviewResult | Loading>({ status: 'loading' });
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadOverview().then((result) => {
       if (!cancelled) setState(result);
     });
     return () => {

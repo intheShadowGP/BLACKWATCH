@@ -4,6 +4,8 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable", "WebWorker"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    // Lets modules shared with the Node.js data pipeline import other .ts files by full name.
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "types": ["node", "vite/client"],
     "strict": true,

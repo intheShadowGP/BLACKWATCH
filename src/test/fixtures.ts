@@ -1,6 +1,7 @@
 // Small synthetic datasets for tests. Identifiers and text are invented for
 // testing only; they are never shipped with the application.
 
+import { buildOverviewSummary } from '../data/overview';
 import type { AttackDataset, CertfrDataset, CveDataset, CveItem, KevDataset, Manifest, ManifestEntry } from '../data/schemas';
 
 export const HOSTILE = '<img src=x onerror=alert(1)><script>alert(2)</script>';
@@ -118,16 +119,27 @@ function entry(id: ManifestEntry['id'], count: number, overrides: Partial<Manife
   };
 }
 
+// Placeholder checksums: the application compares them, it does not recompute them.
+const SHA = { kev: 'a'.repeat(64), recent: 'b'.repeat(64), overview: 'c'.repeat(64) };
+
+/** The derived Overview summary, built from the fixtures exactly as the pipeline builds it. */
+export const overview = buildOverviewSummary(
+  { kev: { data: kev, retrievedAt: RETRIEVED, sha256: SHA.kev }, recent: { data: nvdRecent, sha256: SHA.recent } },
+  RETRIEVED,
+  1,
+);
+
 export const manifest: Manifest = {
   schemaVersion: 1,
   generatedAt: RETRIEVED,
   datasets: [
-    entry('kev', kev.items.length),
-    entry('nvd-recent', nvdRecent.items.length),
+    entry('kev', kev.items.length, { sha256: SHA.kev }),
+    entry('nvd-recent', nvdRecent.items.length, { sha256: SHA.recent }),
     entry('nvd-kev', nvdKev.items.length),
     entry('attack', attack.techniques.length),
     entry('certfr', certfr.items.length),
   ],
+  overview: { file: 'overview.json', sha256: SHA.overview },
 };
 
 /** File name to JSON body, as served under data/. */
@@ -138,4 +150,5 @@ export const DATA_FILES: Record<string, unknown> = {
   'nvd-kev.json': nvdKev,
   'attack.json': attack,
   'certfr.json': certfr,
+  'overview.json': overview,
 };
