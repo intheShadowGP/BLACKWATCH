@@ -35,6 +35,11 @@ export default tseslint.config(
     rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
   {
+    // Node scripts that drive a browser: callbacks passed to page.evaluate run in the page.
+    files: ['scripts/docs-screenshots.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ['scripts/pwa/sw.template.js'],
     languageOptions: { globals: globals.serviceworker },
   },

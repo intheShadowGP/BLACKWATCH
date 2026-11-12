@@ -1,24 +1,25 @@
 # Project state
 
-Last updated: 2026-11-11 · Version 0.5.0
+Last updated: 2026-11-12 · Version 1.0.0
 
 ## Summary
 
-Milestone 0 (foundation) is complete. Milestone 1 (intelligence) is largely implemented and
-tested locally on real data: the data pipeline, the overview dashboard, the Vulnerability Center,
-the MITRE ATT&CK Explorer and the Threat Intelligence module. Nothing has been pushed or deployed;
-the repository has no remote yet.
+Milestones 0 to 5 are complete. Every module works on real, traceable public data or on the
+user's own files, the application is installable and usable offline, and the quality checks listed
+in [QUALITY_REPORT.md](QUALITY_REPORT.md) pass locally. Version 0.4 is deployed at
+https://intheshadowgp.github.io/BLACKWATCH/ by the GitHub Actions workflow; the 1.0 commits are
+local and have not been pushed.
 
 ## Milestones
 
 | Milestone | State |
 | --- | --- |
-| 0 — Foundation | Complete, tested locally; first deployment pending |
-| 1 — Intelligence | Mostly complete (see "Partially implemented"); deployment pending |
-| 2 — Security Toolbox | Complete, tested locally |
-| 3 — SOC Workbench | Complete, tested locally |
-| 4 — Cyber Lab | Complete, tested locally |
-| 5 — Production hardening | Not started |
+| 0 — Foundation | Complete, deployed |
+| 1 — Intelligence | Complete with the partial areas listed below, deployed |
+| 2 — Security Toolbox | Complete, deployed |
+| 3 — SOC Workbench | Complete, deployed |
+| 4 — Cyber Lab | Complete, tested locally, not yet deployed |
+| 5 — Production hardening | Complete, tested locally (Chromium), not yet deployed |
 
 ## Implemented and tested
 
@@ -27,69 +28,60 @@ the repository has no remote yet.
 - **Data pipeline** (`scripts/data`): CISA KEV, NVD (CVEs of the last 7 days and records of KEV
   entries), MITRE ATT&CK Enterprise, CERT-FR advisories and alerts. Validation against shared Zod
   schemas, normalisation, deduplication, provenance manifest with licence, notice, retrieval time
-  and SHA-256, last-valid-copy fallback marked "stale". Last local run: 5/5 datasets fresh.
+  and SHA-256, last-valid-copy fallback marked "stale". Derived Overview summary with the checksums
+  of its sources.
 - **Overview:** KEV and CVE figures, severity distribution, monthly KEV additions, latest KEV
   entries, recent critical CVEs, latest CERT-FR publications, dataset freshness table.
-- **Vulnerability Center:** recent CVEs, KEV catalog and watchlist tabs; search, severity filter,
-  sorting, pagination; CVE page with CVSS 3.x (recomputed and compared) and 4.0 (decoded), CWE,
-  products, references, KEV details, remediation references, explained P1–P5 priority; CSV export;
-  print stylesheet.
+- **Vulnerability Center:** recent CVEs, KEV catalog and watchlist tabs; search, filters, sorting,
+  pagination; CVE page with CVSS 3.x (recomputed and compared) and 4.0 (decoded), CWE, products,
+  references, KEV details, explained P1–P5 priority; CSV export; print stylesheet.
 - **MITRE ATT&CK Explorer:** matrix with platform filter, groups, software, campaigns,
   mitigations; detail pages with relationships in both directions; dataset version shown.
-- **Threat Intelligence:** merged CERT-FR / KEV feed, IOC explorer (paste or file up to 5 MB;
-  IPv4, IPv6, domains, URLs, e-mail, MD5/SHA-1/SHA-256/SHA-512; refang/defang; address classes;
-  CSV/JSON export), threat actors, campaign timeline, investigation notes.
-- **Settings:** favorites (watchlist) management added.
-
-- **Security Toolbox:** 20 tools covering the 23 required utilities (registry test enforces the
-  mapping); regex tester in a worker with a 2 s kill switch; file hashing and inspection in a
-  worker (MD5, SHA-1, SHA-256, SHA-384, SHA-512, entropy profile, magic-byte detection, hex view);
-  IPv4/IPv6/CIDR calculators; IANA port registry search; HTTP header analyzer; password pattern
-  checks; TLS reference from RFC 9325; Sigma and YARA structural viewers; shared IOC explorer.
-
-- **SOC Workbench:** multi-file local import in a worker; parsers for JSON/JSON Lines (incl.
-  journald), CSV, syslog (RFC 3164, RFC 5424, ISO; auth.log, secure), Apache/Nginx access and error
-  logs, Windows Event XML (UTF-8/UTF-16, with or without <Events> root); binary inputs (EVTX, gzip,
-  zip, pcap…) recognised with instructions; per-file statistics with unparsed samples; year and
-  time-zone settings; 12 detection rules with parameters, ATT&CK mapping and contributing events;
-  documented Sigma subset with "not applicable" and "unsupported" outcomes; events table with
-  filters and flags, timeline, entities; explicit save of investigations; Markdown report, CSV and
-  JSON exports.
-
-- **Cyber Lab:** ten synthetic scenarios with evidence, five graded steps each (investigation,
-  decision, containment, remediation), feedback and cited guidance, locked answers, versioned local
-  progress, restart with confirmation, Markdown report.
+- **Threat Intelligence:** merged CERT-FR / KEV feed, IOC explorer, threat actors, campaign
+  timeline, investigation notes.
+- **Security Toolbox:** 20 tools covering the 23 required utilities.
+- **SOC Workbench:** local multi-format log import in a worker, 12 detection rules, Sigma subset,
+  events, timeline, entities, saved investigations, Markdown/CSV/JSON exports.
+- **Cyber Lab:** ten synthetic scenarios with evidence, graded steps, cited guidance, versioned
+  local progress and Markdown reports.
+- **Production hardening:** axe WCAG A/AA audit in both themes and keyboard focus fixes;
+  installable web application with an offline shell, verified offline dataset copies and a
+  user-triggered update; Overview summary (6.4 MB of JSON to 48 kB on first visit); reserved chart
+  heights (desktop CLS 0.046); workflow actions pinned to commit SHAs; Firefox and WebKit projects
+  in CI; README screenshots.
 
 ## Partially implemented
 
 - Vulnerability Center: no OSV or GitHub Advisory Database data; CVEs older than 7 days are only
   available when they are in KEV; CVSS 4.0 scores are not recomputed; PDF export relies on the
-  browser's print dialog for the current page of results.
+  browser's print dialog.
 - Threat Intelligence: no indicator reputation feed (abuse.ch excluded, see DECISIONS.md D-015),
-  no indicator relationship graph, no geolocation (by design: no credible source integrated).
-- Settings: dataset cache controls wait for offline support.
+  no indicator relationship graph, no geolocation.
 
-## Not implemented
+## Not verified
 
-PWA and offline support.
+- Firefox and WebKit: configured in CI, never executed (they could not be started on the
+  development machine).
+- The 1.0 workflow changes have not run on GitHub.
 
 ## Deployment
 
-- `deploy.yml` builds the datasets, verifies and publishes on push and daily. `ci.yml` runs lint,
-  types, unit and end-to-end tests on fixtures. Neither has run on GitHub yet.
-- Owner actions needed: create the public repository, push, set Pages source to GitHub Actions.
+- `deploy.yml` builds the datasets, verifies and publishes on push and daily; `ci.yml` runs lint,
+  types, unit and end-to-end tests on fixtures. Both ran successfully on GitHub for version 0.4.
+- Releasing 1.0 needs the owner's decision: push `main`, check the CI run (Firefox and WebKit
+  included), then tag `v1.0.0` and publish a GitHub release.
 
 ## Known limitations
 
-- Overview downloads about 6.5 MB of JSON before compression on first visit.
-- Main JavaScript bundle is about 510 kB (158 kB gzip).
+- Main JavaScript bundle 593 kB (184 kB gzip), needed for the first render.
 - Brief dark background at start-up for light-theme users.
-- End-to-end coverage is Chromium only; Lighthouse not measured.
+- Offline, only datasets opened while online are available.
 
 ## Security considerations
 
 - Meta-delivered CSP: no framing protection, no HTTP security headers (README).
+- All sites of the GitHub account share the web origin and can read this application's browser
+  storage (README).
 - Dataset text is third-party and validated, length-limited and rendered as text.
-- CSV exports neutralise spreadsheet formulas.
-- URLs embedding credentials are rejected by the IOC extractor so secrets are never exported.
+- CSV exports neutralise spreadsheet formulas; reports are Markdown with fenced excerpts.
 - IndexedDB content is unencrypted at rest.

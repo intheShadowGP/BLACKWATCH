@@ -270,3 +270,58 @@ chunks; the list page uses a small catalogue checked against them.
 Progress is stored per scenario in IndexedDB with the scenario version. An attempt made on an
 older version keeps its frozen score and is never re-scored against new questions; the learner is
 offered a restart, which asks for confirmation.
+
+## D-037 — Accessibility checked by rules and by focus tests
+
+Every route, in both themes and at desktop and mobile width, is audited with axe-core against the
+WCAG 2.0, 2.1 and 2.2 A and AA rules in the end-to-end suite; the build fails on any violation.
+Scrollable regions (evidence, outputs, wide tables) are focusable and named. When an action removes
+the focused control (submitting a Lab answer, showing the events of a finding), focus moves to its
+result instead of falling back to the page. Visible language codes start the buttons' accessible
+names. These are automated checks; no manual screen-reader session has been recorded.
+
+## D-038 — Derived Overview summary instead of chunk splitting
+
+The Overview parsed about 6.4 MB of JSON to show a few figures. The pipeline now publishes
+overview.json, computed by the same module the application uses (src/data/overview.ts, imported by
+Node directly), with the SHA-256 of the files it was derived from. The application uses it only when
+those checksums match the manifest and otherwise computes the figures from the datasets, so a
+partial or out-of-order publication can never show figures that disagree with the data. Vendor
+chunk splitting was measured and not applied: everything in the main bundle is needed for the first
+render, so splitting adds requests without saving bytes.
+
+## D-039 — Offline support with verified dataset copies
+
+The service worker is generated at build time from a readable template, without a framework. It
+precaches every built file except the datasets, atomically and bypassing the HTTP cache, under a
+version derived from their content. Datasets are network first; the copy kept for offline use is
+served only if its SHA-256 matches the cached manifest, otherwise the request fails as a network
+error and the page says so (never "not published"). A new version waits until the user reloads from
+the notice, in that tab only: an automatic reload would discard SOC imports held in memory. Cache
+names carry a "blackwatch-" prefix because other sites of the account share the origin; deleting
+local data removes the dataset copies and keeps the application shell, which holds no user data.
+End-to-end specs block service workers; a dedicated spec serves the build under /BLACKWATCH/ and
+stops its server to simulate a lost connection.
+
+## D-040 — Cross-browser testing in CI
+
+Firefox and WebKit projects run in CI and, locally, with E2E_ALL_BROWSERS=1. Neither engine could be
+started on the development machine, so their results come only from CI. The download helper keeps
+the object URL alive for 30 seconds, because revoking it at once can cancel the download in Safari
+and Firefox. Supported versions follow from the code (README): Chrome and Edge 111, Firefox 128,
+Safari 16.4.
+
+## D-041 — Pinned actions and a non-blocking ATT&CK drift check
+
+Workflow actions are pinned to the commit of their current release, resolved with git ls-remote,
+with the version in a comment; pins are updated by hand. Lab scenarios cite ATT&CK identifiers that a
+test checks against the published dataset. In the daily deployment that check runs in its own
+non-blocking step: a new ATT&CK release that retires an identifier is reported without stopping the
+refresh of the other datasets. Everywhere else the check blocks.
+
+## D-042 — README screenshots checked for restricted names
+
+Screenshots are taken from the production build with the live datasets by
+scripts/docs-screenshots.mjs, which refuses to write a capture whose visible text contains a term
+of the repository identity policy (third-party dataset text may name any product, D-016). The SOC
+view uses a synthetic log with documentation addresses.

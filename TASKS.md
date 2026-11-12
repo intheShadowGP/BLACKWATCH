@@ -63,12 +63,24 @@
 
 ## Milestone 5 — Production hardening
 
-- [ ] PWA: manifest, service worker, offline shell, update notification, cache management
-- [ ] Bundle analysis and vendor chunk splitting
-- [ ] Lighthouse performance and accessibility measurements
-- [ ] Automated accessibility checks in end-to-end tests
-- [ ] Firefox and WebKit end-to-end projects
-- [ ] Pin GitHub Actions to commit SHAs
-- [ ] Remove the `minimatch` override when upstream ranges allow it
+- [x] PWA: manifest, icons, service worker, offline shell, update notification, cache management
+- [x] Bundle analysis (vendor chunk splitting evaluated and not applied, see QUALITY_REPORT.md)
+- [x] Overview summary dataset
+- [x] Lighthouse performance and accessibility measurements (local build)
+- [x] Automated accessibility checks in end-to-end tests
+- [x] Firefox and WebKit end-to-end projects (CI; not executed locally)
+- [x] Pin GitHub Actions to commit SHAs
+- [x] Screenshots in the README
+
+## Release 1.0
+
+- [x] Documentation and quality report updated, version 1.0.0
+- [ ] Push, confirm the CI run (Firefox and WebKit included) and the deployment
+- [ ] Tag v1.0.0 and publish the GitHub release
+
+## After 1.0
+
 - [ ] Remove the start-up theme flash for light-theme users
-- [ ] Screenshots in the README
+- [ ] Remove the `minimatch` override when upstream ranges allow it
+- [ ] Characterise or rule out the local end-to-end chunk stall
+- [ ] Optional: OSV and GitHub Advisory data, more Lab scenarios
